@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Pago completado · Mon Cangur</title>
+    <style>
+      /* Alineado con lib/theme/app_theme.dart — AppColors */
+      :root {
+        --bg: #f3d7b7;
+        --text-primary: #1f1f1f;
+        --text-secondary: #6c6c6c;
+        --surface: rgba(255, 255, 255, 0.88);
+        --success: #2e7d32;
+        --radius: 22px;
+        --radius-sm: 16px;
+      }
+
+      @font-face {
+        font-family: "CoreBandiFace";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src:
+          local("CoreBandiFace"),
+          url("/assets/fonts/CoreBandiFace-Regular.ttf") format("truetype");
+      }
+
+      @font-face {
+        font-family: "Scripter";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src:
+          local("Scripter"),
+          url("/assets/fonts/Scripter-Regular.ttf") format("truetype");
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "CoreBandiFace", "Segoe UI", system-ui, sans-serif;
+        color: var(--text-primary);
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px 40px;
+      }
+
+      .shell {
+        width: 100%;
+        max-width: 420px;
+      }
+
+      .header {
+        text-align: center;
+        padding: 28px 20px 22px;
+        border-radius: var(--radius);
+        background: linear-gradient(
+          165deg,
+          rgba(116, 70, 31, 0.92) 0%,
+          rgba(95, 173, 187, 0.55) 42%,
+          rgba(139, 90, 43, 0.92) 100%
+        );
+        color: #fff;
+        box-shadow: 0 10px 28px rgba(116, 70, 31, 0.2);
+      }
+
+      .mark {
+        width: 78px;
+        height: 78px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: rgba(232, 245, 233, 0.95);
+        border: 3px solid rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        line-height: 1;
+        color: var(--success);
+        font-weight: 800;
+      }
+
+      h1 {
+        font-family: "Scripter", "Segoe UI", Georgia, serif;
+        font-size: 1.75rem;
+        font-weight: 400;
+        margin: 0 0 8px;
+        letter-spacing: 0.01em;
+      }
+
+      .header-sub {
+        font-size: 0.9rem;
+        font-weight: 600;
+        opacity: 0.96;
+        margin: 0;
+      }
+
+      .card {
+        margin-top: -12px;
+        padding: 22px 20px 20px;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(139, 90, 43, 0.12);
+        box-shadow: 0 6px 20px rgba(31, 31, 31, 0.06);
+      }
+
+      .card p {
+        margin: 0;
+        line-height: 1.55;
+        font-size: 0.98rem;
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .hint {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(139, 90, 43, 0.1);
+        font-size: 0.86rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        line-height: 1.45;
+      }
+
+      .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 20px;
+        padding: 6px 12px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="header">
+        <div class="mark" aria-hidden="true">✓</div>
+        <h1>Pago completado</h1>
+        <p class="header-sub">La operación se ha autorizado correctamente</p>
+        <div class="brand-pill" title="Mon Cangur">
+          <span aria-hidden="true">◎</span> Mon Cangur
+        </div>
+      </header>
+
+      <div class="card">
+        <p>
+          Ya puedes cerrar esta pestaña y volver a la aplicación. El estado de la reserva se actualizará como
+          <strong>pagada</strong> en unos segundos.
+        </p>
+        <p class="hint">
+          Consejo: vuelve a la otra pestaña del navegador; allí verás el resultado al instante cuando lo recibamos.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage(
+              { source: "moncangur_redsys", kind: "payment_result", success: true },
+              location.origin
+            );
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>

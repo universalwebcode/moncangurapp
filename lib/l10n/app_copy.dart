@@ -1,0 +1,530 @@
+import '../models/models.dart';
+
+/// UI copy recovered from the hosted build, in Catalan, Spanish, English and French.
+/// Rows are [ca, es, en, fr].
+const _rows = <String, List<String>>{
+  'welcome': [
+    'Benvingut a Mon Cangur!',
+    '¡Bienvenido a Mon Cangur!',
+    'Welcome to Mon Cangur!',
+    'Bienvenue sur Mon Cangur !',
+  ],
+  'welcomeSub': [
+    'Completa la informació següent per accedir al teu compte.',
+    'Completa la información a continuación para acceder a tu cuenta.',
+    'Fill in the details below to access your account.',
+    'Remplissez les informations ci-dessous pour accéder à votre compte.',
+  ],
+  'email': ['Correu electrònic', 'Correo electrónico', 'Email', 'E-mail'],
+  'password': ['Contrasenya', 'Contraseña', 'Password', 'Mot de passe'],
+  'signIn': ['Iniciar sessió', 'Iniciar sesión', 'Sign in', 'Se connecter'],
+  'noAccount': ['Encara no tens compte?', '¿Aún no tienes una cuenta?', 'No account yet?', 'Pas encore de compte ?'],
+  'createYours': ['Crea el teu compte', 'Crea tu cuenta', 'Create your account', 'Créer votre compte'],
+  'haveAccount': ['Ja tens compte?', '¿Ya tienes una cuenta?', 'Already have an account?', 'Vous avez déjà un compte ?'],
+  'signInHere': ['Inicia sessió aquí', 'Inicia sesión aquí', 'Sign in here', 'Connectez-vous ici'],
+  'createAccount': ['Crear compte', 'Crear cuenta', 'Create account', 'Créer un compte'],
+  'confirmPassword': ['Confirmar contrasenya', 'Confirmar contraseña', 'Confirm password', 'Confirmer le mot de passe'],
+  'forgot': ['Has oblidat la contrasenya?', '¿Olvidaste tu contraseña?', 'Forgot your password?', 'Mot de passe oublié ?'],
+  'recover': ['Recuperar contrasenya', 'Recuperar contraseña', 'Reset password', 'Réinitialiser le mot de passe'],
+  'recoverHint': [
+    "Introdueix el teu correu i t'enviarem un enllaç per restablir la contrasenya.",
+    'Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.',
+    'Enter your email and we will send you a link to reset your password.',
+    'Saisissez votre e-mail et nous vous enverrons un lien pour réinitialiser le mot de passe.',
+  ],
+  'recoverSent': [
+    'Si existeix un compte amb aquest correu, rebràs les instruccions aviat.',
+    'Si existe una cuenta con ese correo, recibirás las instrucciones en breve.',
+    'If an account exists for that email, you will receive the instructions shortly.',
+    'Si un compte existe pour cet e-mail, vous recevrez les instructions sous peu.',
+  ],
+  'invalidEmail': [
+    'Introdueix un correu electrònic vàlid.',
+    'Introduce un correo electrónico válido.',
+    'Enter a valid email address.',
+    'Saisissez un e-mail valide.',
+  ],
+  'emailInvalidShort': [
+    'El correu electrònic no és vàlid.',
+    'El correo electrónico no es válido.',
+    'The email address is not valid.',
+    "L'adresse e-mail n'est pas valide.",
+  ],
+  'wrongCredentials': [
+    'Correu o contrasenya incorrectes.',
+    'Correo o contraseña incorrectos.',
+    'Incorrect email or password.',
+    'E-mail ou mot de passe incorrect.',
+  ],
+  'emailTaken': [
+    'Aquest correu ja està registrat.',
+    'Este correo ya está registrado.',
+    'This email is already registered.',
+    'Cet e-mail est déjà enregistré.',
+  ],
+  'weakPassword': [
+    'La contrasenya ha de tenir almenys 6 caràcters.',
+    'La contraseña debe tener al menos 6 caracteres.',
+    'The password must be at least 6 characters.',
+    'Le mot de passe doit contenir au moins 6 caractères.',
+  ],
+  'mismatch': [
+    'Les contrasenyes no coincideixen.',
+    'Las contraseñas no coinciden.',
+    'The passwords do not match.',
+    'Les mots de passe ne correspondent pas.',
+  ],
+  'accountCreated': [
+    'Compte creat correctament. Inicia sessió.',
+    'Cuenta creada correctamente. Inicia sesión.',
+    'Account created. Please sign in.',
+    'Compte créé avec succès. Connectez-vous.',
+  ],
+  'ourServices': ['Els nostres serveis', 'Nuestros servicios', 'Our services', 'Nos services'],
+  'serviceTypes': ['Tipus de serveis', 'Tipos de servicios', 'Service types', 'Types de services'],
+  'children': ['Nombre de nens', 'Número de niños', 'Number of children', "Nombre d'enfants"],
+  'pickService': [
+    'Selecciona un tipus de servei.',
+    'Selecciona un tipo de servicio.',
+    'Select a service type.',
+    'Sélectionnez un type de service.',
+  ],
+  'invalidRange': [
+    'Selecciona un interval horari vàlid.',
+    'Selecciona un rango horario válido.',
+    'Select a valid time range.',
+    'Veuillez sélectionner une plage horaire valide.',
+  ],
+  'find': [
+    'Trobar cangurs disponibles',
+    'Encontrar canguros disponibles',
+    'Find available nannies',
+    'Trouver des nounous disponibles',
+  ],
+  'loadError': [
+    'Error en carregar els serveis.',
+    'Error al cargar servicios.',
+    'Could not load services.',
+    'Impossible de charger les services.',
+  ],
+  'noMatch': [
+    'No hi ha cangurs que coincideixin amb data, horari i servei.',
+    'No hay canguros que coincidan con fecha, horario y servicio.',
+    'No nannies match that date, time and service.',
+    'Aucune nounou ne correspond à cette date, cet horaire et ce service.',
+  ],
+  'services': ['Serveis', 'Servicios', 'Services', 'Services'],
+  'bookings': ['Reserves', 'Reservas', 'Bookings', 'Réservations'],
+  'profile': ['Perfil', 'Perfil', 'Profile', 'Profil'],
+  'signOut': ['Tancar sessió', 'Cerrar sesión', 'Sign out', 'Se déconnecter'],
+  'oneCaregiver': [
+    'Un cuidador és suficient per a aquest nombre de nens.',
+    'Un cuidador es suficiente para este número de niños.',
+    'One caregiver is enough for this number of children.',
+    'Un seul intervenant suffit pour ce nombre d’enfants.',
+  ],
+  'maybeMore': [
+    "Pot ser que necessitis més d'un cuidador; ho confirmarem amb tu.",
+    'Puede que necesites más de un cuidador; lo confirmaremos contigo.',
+    'You may need more than one caregiver; we will confirm with you.',
+    'Vous aurez peut-être besoin de plus d’un intervenant ; nous le confirmerons avec vous.',
+  ],
+  'mediumGroup': [
+    'Per a grups mitjans coordinarem diversos cuidadors.',
+    'Para grupos medianos coordinaremos varios cuidadores.',
+    'For medium groups we will coordinate several caregivers.',
+    'Pour les groupes moyens, nous coordonnerons plusieurs intervenants.',
+  ],
+  'largeGroup': [
+    "Per a grups grans (fins a 25 nens) coordinarem l'equip necessari.",
+    'Para grupos grandes (hasta 25 niños) coordinaremos el equipo necesario.',
+    'For large groups (up to 25 children) we will coordinate the team you need.',
+    'Pour les grands groupes (jusqu’à 25 enfants) nous coordonnerons l’équipe nécessaire.',
+  ],
+  'dateTime': ['Data i hora', 'Fecha y hora', 'Date and time', 'Date et heure'],
+  'start': ['Hora d\'inici', 'Hora de inicio', 'Start time', 'Heure de début'],
+  'end': ['Hora de finalització', 'Hora de finalización', 'End time', 'Heure de fin'],
+  'address': ['Adreça del servei', 'Dirección del servicio', 'Service address', 'Adresse du service'],
+  'summary': ['Resum de la reserva', 'Resumen de reserva', 'Booking summary', 'Récapitulatif'],
+  'date': ['Data', 'Fecha', 'Date', 'Date'],
+  'schedule': ['Horari', 'Horario', 'Schedule', 'Horaire'],
+  'duration': ['Durada', 'Duración', 'Duration', 'Durée'],
+  'hours': ['hores', 'horas', 'hours', 'heures'],
+  'hourly': ['Tarifa per hora', 'Tarifa por hora', 'Hourly rate', 'Tarif horaire'],
+  'subtotal': ['Subtotal', 'Subtotal', 'Subtotal', 'Sous-total'],
+  'fee': ['Comissió de servei', 'Comisión de servicio', 'Service fee', 'Commission de service'],
+  'total': ['Total', 'Total', 'Total', 'Total'],
+  'estimated': ['Tarifa estimada', 'Tarifa estimada', 'Estimated rate', 'Tarif estimé'],
+  'pay': ['Pagar', 'Pagar', 'Pay', 'Payer'],
+  'payFail': ['El pagament no s\'ha completat', 'Pago no realizado', 'Payment not completed', 'Paiement non effectué'],
+  'paidTitle': ['Pagament completat', 'Pago completado', 'Payment completed', 'Paiement effectué'],
+  'paidBody': [
+    'La teva reserva consta com a pagada. Pots tancar aquesta pantalla.',
+    'Tu reserva consta como pagada. Puedes cerrar esta pantalla.',
+    'Your booking is marked as paid. You can close this screen.',
+    'Votre réservation est marquée comme payée. Vous pouvez fermer cet écran.',
+  ],
+  'failedBody': [
+    "Has cancel·lat el pagament o no s'ha pogut completar. A Reserves veuràs l'estat com a pagament fallit.",
+    'Has cancelado el pago o no se ha podido completar. En Reservas verás el estado como pago fallido.',
+    'You cancelled the payment or it could not be completed. Bookings will show it as failed.',
+    'Vous avez annulé le paiement ou il n’a pas abouti. Les réservations l’afficheront comme échoué.',
+  ],
+  'pending': ['Pendent', 'Pendiente', 'Pending', 'En attente'],
+  'paid': ['Pagada', 'Pagada', 'Paid', 'Payée'],
+  'failed': ['Pagament fallit', 'Pago fallido', 'Payment failed', 'Paiement échoué'],
+  'quote': ['Pressupost', 'Presupuesto', 'Quote', 'Devis'],
+  'confirmed': ['Confirmada', 'Confirmada', 'Confirmed', 'Confirmée'],
+  'emptyBookings': [
+    'Encara no tens reserves.',
+    'Aún no tienes reservas.',
+    'You have no bookings yet.',
+    'Vous n’avez pas encore de réservations.',
+  ],
+  'noBookingsFilter': [
+    'No hi ha reserves amb aquest filtre.',
+    'No hay reservas con ese filtro.',
+    'No bookings match that filter.',
+    'Aucune réservation pour ce filtre.',
+  ],
+  'eventTitle': [
+    'Sol·licitud de servei per a esdeveniments',
+    'Solicitud de servicio para eventos',
+    'Event service request',
+    'Demande de service pour un événement',
+  ],
+  'eventIntro': [
+    'T\'oferim suport professional durant les teves celebracions. Completa el formulari amb els detalls del teu esdeveniment.',
+    'Le ofrecemos apoyo profesional durante sus celebraciones. Completa el formulario con los detalles de tu evento.',
+    'We offer professional support during your celebrations. Fill in the details of your event.',
+    'Nous vous accompagnons pendant vos célébrations. Indiquez les détails de votre événement.',
+  ],
+  'eventSuccess': [
+    'Hem registrat la teva sol·licitud de servei per a esdeveniments. Rebràs un pressupost personalitzat per WhatsApp o correu electrònic.',
+    'Hemos registrado tu solicitud de servicio para eventos. Recibirás un presupuesto personalizado por WhatsApp o correo electrónico.',
+    'We have registered your event request. You will receive a personal quote by WhatsApp or email.',
+    'Nous avons enregistré votre demande d’événement. Vous recevrez un devis par WhatsApp ou e-mail.',
+  ],
+  'fixedTitle': [
+    'Sol·licitud de servei fix',
+    'Solicitud de servicio fijo',
+    'Regular service request',
+    'Demande de service régulier',
+  ],
+  'fixedIntro': [
+    'Completa el formulari amb els detalls del servei recurrent que necessites.',
+    'Completa el formulario con los detalles del servicio recurrente que necesitas.',
+    'Fill in the details of the recurring service you need.',
+    'Indiquez les détails du service récurrent dont vous avez besoin.',
+  ],
+  'fixedSuccess': [
+    'Hem registrat la teva sol·licitud de servei fix. Rebràs un pressupost personalitzat per WhatsApp o correu electrònic.',
+    'Hemos registrado tu solicitud de servicio fijo. Recibirás un presupuesto personalizado por WhatsApp o correo electrónico.',
+    'We have registered your regular-service request. You will receive a personal quote by WhatsApp or email.',
+    'Nous avons enregistré votre demande de service régulier. Vous recevrez un devis par WhatsApp ou e-mail.',
+  ],
+  'afterSubmit': [
+    'Després d\'enviar la sol·licitud, el nostre equip prepararà un pressupost personalitzat i te l\'enviarà per WhatsApp o correu electrònic.',
+    'Tras enviar la solicitud, nuestro equipo preparará un presupuesto personalizado y te lo enviará por WhatsApp o correo electrónico.',
+    'After you send the request, our team will prepare a personal quote and send it by WhatsApp or email.',
+    'Après l’envoi, notre équipe préparera un devis personnalisé et vous l’enverra par WhatsApp ou e-mail.',
+  ],
+  'eventType': ['Tipus d\'esdeveniment', 'Tipo de evento', 'Event type', 'Type d’événement'],
+  'eventWhen': ['Data i hora de l\'esdeveniment', 'Fecha y hora del evento', 'Event date and time', 'Date et heure de l’événement'],
+  'childrenInfo': ['Informació dels nens', 'Información de los niños', 'Children', 'Enfants'],
+  'ageHint': [
+    'Selecciona un o més rangs d\'edat dels nens que hi assistiran.',
+    'Selecciona uno o más rangos de edad de los niños que asistirán.',
+    'Select one or more age ranges for the children attending.',
+    'Sélectionnez une ou plusieurs tranches d’âge des enfants présents.',
+  ],
+  'eventLocation': ['Ubicació de l\'esdeveniment', 'Ubicación del evento', 'Event location', 'Lieu de l’événement'],
+  'period': ['Període del servei', 'Periodo del servicio', 'Service period', 'Période du service'],
+  'bands': ['Franja horària', 'Franja horaria', 'Time band', 'Plage horaire'],
+  'bandsHint': [
+    'Selecciona un o més rangs. Farem servir aquesta informació per assignar cangurs adequats.',
+    'Selecciona uno o más rangos. Usaremos esta información para asignar canguros adecuados.',
+    'Select one or more ranges. We use them to assign the right nannies.',
+    'Sélectionnez une ou plusieurs plages. Nous les utiliserons pour assigner les nounous.',
+  ],
+  'send': ['Enviar sol·licitud', 'Enviar solicitud', 'Send request', 'Envoyer la demande'],
+  'mustSignIn': [
+    'Has d\'iniciar sessió per enviar la sol·licitud.',
+    'Debes iniciar sesión para enviar la solicitud.',
+    'You must sign in to send the request.',
+    'Vous devez vous connecter pour envoyer la demande.',
+  ],
+  'activeProfile': ['Perfil actiu', 'Perfil activo', 'Active profile', 'Profil actif'],
+  'servicesYouOffer': ['Serveis que ofereixes', 'Servicios que ofreces', 'Services you offer', 'Services que vous proposez'],
+  'mustMark': [
+    'Has de marcar els tipus de servei per aparèixer a les cerques de les famílies.',
+    'Debes marcar los tipos de servicio para aparecer en las búsquedas de padres.',
+    'Mark the service types you offer so families can find you.',
+    'Cochez les types de service pour apparaître dans les recherches des familles.',
+  ],
+  'weekly': ['Disponibilitat setmanal', 'Disponibilidad semanal', 'Weekly availability', 'Disponibilité hebdomadaire'],
+  'noAvailability': [
+    'Sense disponibilitat registrada.',
+    'Sin disponibilidad registrada.',
+    'No availability recorded.',
+    'Aucune disponibilité enregistrée.',
+  ],
+  'unavailable': ['No disponible', 'No disponible', 'Unavailable', 'Non disponible'],
+  'editPro': ['Editar perfil professional', 'Editar perfil profesional', 'Edit professional profile', 'Modifier le profil professionnel'],
+  'updateInfo': [
+    'Actualitza la teva informació, serveis i disponibilitat.',
+    'Actualiza tu información, servicios y disponibilidad.',
+    'Update your information, services and availability.',
+    'Mettez à jour vos informations, services et disponibilité.',
+  ],
+  'createPro': ['Crear perfil professional', 'Crear perfil profesional', 'Create professional profile', 'Créer un profil professionnel'],
+  'noPro': [
+    'No existeix un perfil professional per a aquest usuari.',
+    'No existe perfil profesional para este usuario.',
+    'There is no professional profile for this user.',
+    'Aucun profil professionnel pour cet utilisateur.',
+  ],
+  'cangurSignOut': [
+    'Surt del teu compte de cangur.',
+    'Salir de tu cuenta de canguro.',
+    'Sign out of your nanny account.',
+    'Quitter votre compte de nounou.',
+  ],
+  'assigned': ['Cangur assignat', 'Canguro asignado', 'Nanny assigned', 'Nounou assignée'],
+  'noAssigned': ['Sense cangur assignat', 'Sin canguro asignado', 'No nanny assigned', 'Aucune nounou assignée'],
+  'manage': ['Gestió de cangurs', 'Gestión de canguros', 'Nanny management', 'Gestion des nounous'],
+  'manageHint': [
+    'Gestiona l\'equip de cangurs i supervisa les reserves actives.',
+    'Gestiona el equipo de canguros y supervisa las reservas activas.',
+    'Manage the nanny team and supervise active bookings.',
+    'Gérez l’équipe et supervisez les réservations actives.',
+  ],
+  'totalCanguros': ['Total cangurs', 'Total canguros', 'Total nannies', 'Total nounous'],
+  'totalBookings': ['Total reserves', 'Total reservas', 'Total bookings', 'Total réservations'],
+  'history': [
+    'Historial acumulat de serveis prestats.',
+    'Histórico acumulado de servicios prestados.',
+    'History of services provided.',
+    'Historique des services réalisés.',
+  ],
+  'accountInfo': ['Informació del compte', 'Información de cuenta', 'Account', 'Informations du compte'],
+  'adminHint': [
+    'Administra perfils, estat i disponibilitat.',
+    'Administra perfiles, estado y disponibilidad.',
+    'Manage profiles, status and availability.',
+    'Gérez les profils, le statut et la disponibilité.',
+  ],
+  'adminOut': [
+    'Surt del teu compte d\'administrador.',
+    'Salir de tu cuenta de administrador.',
+    'Log out of your administrator account.',
+    'Quittez votre compte administrateur.',
+  ],
+  'search': [
+    'Cerca per nom o correu...',
+    'Buscar por nombre o email...',
+    'Search by name or email...',
+    'Rechercher par nom ou e-mail...',
+  ],
+  'noEmail': ['Sense correu', 'Sin correo', 'No email', 'Sans e-mail'],
+  'supervise': [
+    'Supervisa i gestiona les sol·licituds de servei.',
+    'Supervisa y gestiona las solicitudes de servicio.',
+    'Supervise and manage service requests.',
+    'Supervisez et gérez les demandes de service.',
+  ],
+  'assign': ['Assignar cangur', 'Asignar canguro', 'Assign nanny', 'Assigner une nounou'],
+  'selectAvailable': [
+    'Selecciona cangur disponible',
+    'Selecciona canguro disponible',
+    'Select an available nanny',
+    'Sélectionner une nounou disponible',
+  ],
+  'assignedOk': [
+    'Cangur assignat correctament.',
+    'Canguro asignado correctamente.',
+    'Nanny assigned successfully.',
+    'Nounou assignée avec succès.',
+  ],
+  'noneForBooking': [
+    'No hi ha cangurs disponibles per a aquesta reserva.',
+    'No hay canguros disponibles para esta reserva.',
+    'No nannies are available for this booking.',
+    'Aucune nounou disponible pour cette réservation.',
+  ],
+  'yourName': ['El teu nom', 'Tu nombre', 'Your name', 'Votre nom'],
+  'phone': ['Telèfon', 'Teléfono', 'Phone', 'Téléphone'],
+  'homeAddress': ['Adreça', 'Dirección', 'Address', 'Adresse'],
+  'emergencyName': [
+    'Nom del contacte d\'emergència',
+    'Nombre contacto emergencia',
+    'Emergency contact name',
+    'Nom du contact d’urgence',
+  ],
+  'emergencyPhone': [
+    'Telèfon del contacte d\'emergència',
+    'Teléfono contacto emergencia',
+    'Emergency contact phone',
+    'Téléphone du contact d’urgence',
+  ],
+  'preferredLanguages': [
+    'Idiomes preferits del cangur',
+    'Idiomas preferidos del canguro',
+    'Preferred nanny languages',
+    'Langues préférées de la nounou',
+  ],
+  'languages': ['Idiomes', 'Idiomas', 'Languages', 'Langues'],
+  'changePassword': ['Canviar contrasenya', 'Cambiar contraseña', 'Change password', 'Changer le mot de passe'],
+  'currentPassword': ['Contrasenya actual', 'Contraseña actual', 'Current password', 'Mot de passe actuel'],
+  'newPassword': ['Nova contrasenya', 'Nueva contraseña', 'New password', 'Nouveau mot de passe'],
+  'confirmNew': [
+    'Confirmar nova contrasenya',
+    'Confirmar nueva contraseña',
+    'Confirm new password',
+    'Confirmer le nouveau mot de passe',
+  ],
+  'passwordHint': [
+    'Introdueix la contrasenya actual i la nova. La nova ha de tenir almenys 6 caràcters.',
+    'Introduce tu contraseña actual y la nueva. La nueva debe tener al menos 6 caracteres.',
+    'Enter your current password and the new one. The new one must be at least 6 characters.',
+    'Saisissez le mot de passe actuel et le nouveau. Le nouveau doit contenir au moins 6 caractères.',
+  ],
+  'passwordChanged': [
+    'Contrasenya actualitzada.',
+    'Contraseña actualizada.',
+    'Password updated.',
+    'Mot de passe mis à jour.',
+  ],
+  'passwordSame': [
+    'La nova contrasenya ha de ser diferent de l\'actual.',
+    'La nueva contraseña debe ser distinta a la actual.',
+    'The new password must be different from the current one.',
+    'Le nouveau mot de passe doit être différent de l’actuel.',
+  ],
+  'enterCurrent': [
+    'Introdueix la contrasenya actual.',
+    'Introduce tu contraseña actual.',
+    'Enter your current password.',
+    'Saisissez votre mot de passe actuel.',
+  ],
+  'contact': [
+    'Contacta amb nosaltres a infomoncangur@gmail.com per a suport o ajuda.',
+    'Contacta con nosotros en infomoncangur@gmail.com para soporte o ayuda.',
+    'Contact us at infomoncangur@gmail.com for support.',
+    'Contactez-nous à infomoncangur@gmail.com pour toute aide.',
+  ],
+  'contactLong': [
+    'Si tens dubtes sobre el servei, el teu compte o una reserva, escriu-nos i et respondrem tan aviat com puguem.',
+    'Si tienes dudas sobre el servicio, tu cuenta o una reserva, escríbenos y te responderemos lo antes posible.',
+    'If you have questions about the service, your account or a booking, write to us and we will reply as soon as we can.',
+    'Pour toute question sur le service, votre compte ou une réservation, écrivez-nous.',
+  ],
+  'reviews': ['Valoracions', 'Valoraciones', 'Reviews', 'Avis'],
+  'beFirst': [
+    'Sigues el primer a valorar aquest servei.',
+    'Sé el primero en valorar este servicio.',
+    'Be the first to review this service.',
+    'Soyez le premier à évaluer ce service.',
+  ],
+  'punctuality': ['Puntualitat', 'Puntualidad', 'Punctuality', 'Ponctualité'],
+  'treatment': ['Tracte', 'Trato', 'Manner', 'Relation'],
+  'professionalism': ['Professionalitat', 'Profesionalismo', 'Professionalism', 'Professionnalisme'],
+  'comment': ['Comentari', 'Comentario', 'Comment', 'Commentaire'],
+  'generalRating': ['Valoració general', 'Valoración general', 'Overall rating', 'Note globale'],
+  'sendReview': ['Enviar valoració', 'Enviar valoración', 'Send review', 'Envoyer l’avis'],
+  'save': ['Desar', 'Guardar', 'Save', 'Enregistrer'],
+  'cancel': ['Cancel·lar', 'Cancelar', 'Cancel', 'Annuler'],
+  'back': ['Tornar', 'Volver', 'Back', 'Retour'],
+  'demoNote': [
+    'Aquesta còpia funciona amb dades de demostració. No escriu al Firebase de producció.',
+    'Esta copia funciona con datos de demostración. No escribe en el Firebase de producción.',
+    'This copy runs on demo data. It does not write to the production Firebase project.',
+    'Cette copie utilise des données de démonstration. Elle n’écrit pas dans le Firebase de production.',
+  ],
+  'demoAccounts': ['Comptes de prova', 'Cuentas de prueba', 'Demo accounts', 'Comptes de démo'],
+  'schedulePending': ['Horari per confirmar', 'Horario por confirmar', 'Schedule to confirm', 'Horaire à confirmer'],
+  'exceptionOff': [
+    'Excepció: no disponible aquest dia',
+    'Excepción: no disponible este día',
+    'Exception: unavailable this day',
+    'Exception : indisponible ce jour',
+  ],
+  'exceptionHours': [
+    'Excepció: horari modificat',
+    'Excepción: horario modificado',
+    'Exception: hours changed',
+    'Exception : horaire modifié',
+  ],
+  'yearsExp': ['anys exp.', 'años exp.', 'yrs exp.', 'ans exp.'],
+  'filterAll': ['Totes', 'Todas', 'All', 'Toutes'],
+  'nanniesLabel': ['Nens', 'Niños', 'Children', 'Enfants'],
+  'father': ['Família', 'Familia', 'Family', 'Famille'],
+  'language': ['Idioma', 'Idioma', 'Language', 'Langue'],
+  'available': ['Disponible', 'Disponible', 'Available', 'Disponible'],
+  'close': ['Tancar', 'Cerrar', 'Close', 'Fermer'],
+  'bookingNotFound': [
+    'No s\'ha pogut trobar la reserva.',
+    'Reserva no encontrada.',
+    'Booking not found.',
+    'Réservation introuvable.',
+  ],
+  'payState': ['Estat del pagament', 'Estado del pago', 'Payment status', 'État du paiement'],
+  'occasionalType': ['Tipus de servei ocasional', 'Tipo de servicio ocasional', 'Occasional service type', 'Type de service occasionnel'],
+};
+
+String t(AppLang lang, String key) {
+  final row = _rows[key];
+  if (row == null || row.length != 4) return key;
+  return row[lang.index];
+}
+
+String serviceName(AppLang lang, String tipo) {
+  const names = <String, List<String>>{
+    'ocasional': ['Ocasional', 'Ocasional', 'Occasional', 'Occasionnel'],
+    'emergencia': ['Emergència', 'Emergencia', 'Emergency', 'Urgence'],
+    'repaso': ['Repàs', 'Repaso', 'Tutoring', 'Soutien scolaire'],
+    'fijo': ['Fix', 'Fijo', 'Regular', 'Régulier'],
+    'eventos': ['Esdeveniments', 'Eventos', 'Events', 'Événements'],
+  };
+  return names[tipo]?[lang.index] ?? tipo;
+}
+
+String dayName(AppLang lang, String key) {
+  const names = <String, List<String>>{
+    'lunes': ['Dilluns', 'Lunes', 'Monday', 'Lundi'],
+    'martes': ['Dimarts', 'Martes', 'Tuesday', 'Mardi'],
+    'miercoles': ['Dimecres', 'Miércoles', 'Wednesday', 'Mercredi'],
+    'jueves': ['Dijous', 'Jueves', 'Thursday', 'Jeudi'],
+    'viernes': ['Divendres', 'Viernes', 'Friday', 'Vendredi'],
+    'sabado': ['Dissabte', 'Sábado', 'Saturday', 'Samedi'],
+    'domingo': ['Diumenge', 'Domingo', 'Sunday', 'Dimanche'],
+  };
+  return names[key]?[lang.index] ?? key;
+}
+
+String eventTypeName(AppLang lang, String key) {
+  const names = <String, List<String>>{
+    'cumpleanos': ['Aniversari', 'Cumpleaños', 'Birthday', 'Anniversaire'],
+    'fiesta': ['Festa', 'Fiesta', 'Party', 'Fête'],
+    'boda': ['Boda', 'Boda', 'Wedding', 'Mariage'],
+    'excursion': ['Excursió', 'Excursión', 'Outing', 'Sortie'],
+    'otros': ['Altres', 'Otros', 'Other', 'Autre'],
+  };
+  return names[key]?[lang.index] ?? key;
+}
+
+String ageBandName(AppLang lang, String key) {
+  const names = <String, List<String>>{
+    'bebes_0_2': ['Nadons (0-2 anys)', 'Bebés (0-2 años)', 'Babies (0-2 years)', 'Bébés (0-2 ans)'],
+    'ninos_3_6': ['Nens (3-6 anys)', 'Niños (3-6 años)', 'Children (3-6 years)', 'Enfants (3-6 ans)'],
+    'ninos_7_12': ['Nens (7-12 anys)', 'Niños (7-12 años)', 'Children (7-12 years)', 'Enfants (7-12 ans)'],
+    'adolescentes': ['Adolescents', 'Adolescentes', 'Teenagers', 'Adolescents'],
+  };
+  return names[key]?[lang.index] ?? key;
+}
+
+const languageOptions = ['Català', 'Castellà', 'Francès', 'Anglès'];
+
+const eventTypeKeys = ['cumpleanos', 'fiesta', 'boda', 'excursion', 'otros'];
+const ageBandKeys = ['bebes_0_2', 'ninos_3_6', 'ninos_7_12', 'adolescentes'];
+const serviceTypeKeys = ['ocasional', 'emergencia', 'repaso', 'fijo', 'eventos'];
