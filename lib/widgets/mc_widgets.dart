@@ -151,7 +151,17 @@ Future<String?> pickTime(BuildContext context, String current) async {
     hour: int.tryParse(parts.first) ?? 9,
     minute: parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
   );
-  final picked = await showTimePicker(context: context, initialTime: initial);
+  final picked = await showTimePicker(
+    context: context,
+    initialTime: initial,
+    initialEntryMode: TimePickerEntryMode.input,
+    builder: (context, child) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child ?? const SizedBox.shrink(),
+      );
+    },
+  );
   if (picked == null) return null;
   final h = picked.hour.toString().padLeft(2, '0');
   final m = picked.minute.toString().padLeft(2, '0');
