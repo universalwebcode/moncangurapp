@@ -61,7 +61,9 @@ class AppUser {
     this.idiomasCanguro = const [],
     this.contactoEmergenciaNombre = '',
     this.contactoEmergenciaTelefono = '',
-  });
+    this.perfilCompleto = true,
+    Map<String, dynamic>? perfil,
+  }) : perfil = perfil ?? {};
 
   final String id;
   String nombre;
@@ -73,6 +75,8 @@ class AppUser {
   List<String> idiomasCanguro;
   String contactoEmergenciaNombre;
   String contactoEmergenciaTelefono;
+  bool perfilCompleto;
+  Map<String, dynamic> perfil;
 }
 
 class ServiceOffer {
@@ -89,6 +93,7 @@ class ServiceOffer {
     this.gestionTelefonica = false,
     this.requiereAprobacion = false,
     this.requiereFormulario = false,
+    this.image,
   });
 
   final String id;
@@ -103,8 +108,40 @@ class ServiceOffer {
   final bool gestionTelefonica;
   final bool requiereAprobacion;
   final bool requiereFormulario;
+  final String? image;
 
   bool get isQuote => requiereFormulario;
+}
+
+ServiceOffer serviceFromMap(String id, Map<String, dynamic> data) {
+  Map<int, double> rates(Object? raw) {
+    if (raw is! Map) return {};
+    final parsed = <int, double>{};
+    for (final entry in raw.entries) {
+      final children = int.tryParse(entry.key.toString());
+      final amount = entry.value is num ? (entry.value as num).toDouble() : double.tryParse('${entry.value}');
+      if (children != null && amount != null) parsed[children] = amount;
+    }
+    return parsed;
+  }
+
+  double number(Object? raw) => raw is num ? raw.toDouble() : double.tryParse('$raw') ?? 0;
+
+  return ServiceOffer(
+    id: data['id'] is String ? data['id'] as String : id,
+    nombre: data['nombre'] is String ? data['nombre'] as String : id,
+    descripcion: data['descripcion'] is String ? data['descripcion'] as String : '',
+    tipoServicio: data['tipoServicio'] is String ? data['tipoServicio'] as String : id,
+    igi: number(data['igi'] ?? 4.5),
+    tarifaBase: number(data['tarifaBase']),
+    tarifaConIGI: data['tarifaConIGI'] == null ? null : number(data['tarifaConIGI']),
+    tarifasPorNinos: rates(data['tarifasPorNinos']),
+    tarifasPorNinosConIGI: rates(data['tarifasPorNinosConIGI']),
+    gestionTelefonica: data['gestionTelefonica'] == true,
+    requiereAprobacion: data['requiereAprobacion'] == true,
+    requiereFormulario: data['requiereFormulario'] == true,
+    image: data['image'] is String && (data['image'] as String).isNotEmpty ? data['image'] as String : null,
+  );
 }
 
 class CangurProfile {
@@ -120,6 +157,7 @@ class CangurProfile {
     required this.week,
     this.activo = true,
     this.aniosExperiencia = 0,
+    this.photoUrl,
     List<AvailabilityException>? exceptions,
   }) : exceptions = exceptions ?? [];
 
@@ -134,6 +172,7 @@ class CangurProfile {
   Map<String, DayAvailability> week;
   bool activo;
   int aniosExperiencia;
+  final String? photoUrl;
   List<AvailabilityException> exceptions;
 }
 

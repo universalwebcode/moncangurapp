@@ -1,16 +1,22 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'firebase_options.dart';
 import 'models/models.dart';
 import 'screens/admin_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/cangur_screen.dart';
 import 'screens/father_screen.dart';
+import 'screens/profile_setup_screen.dart';
+import 'services/account_gateway.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'widgets/mc_widgets.dart';
 
-void main() {
-  runApp(CangurApp(state: AppState()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: firebaseOptions);
+  runApp(CangurApp(state: AppState(accounts: FirebaseAccountGateway())));
 }
 
 class CangurApp extends StatelessWidget {
@@ -63,8 +69,12 @@ class CangurApp extends StatelessWidget {
       settings: settings,
       builder: (context) {
         final state = AppScope.of(context);
-        if (state.user == null || state.user!.role != role) {
+        final user = state.user;
+        if (user == null || user.role != role) {
           return const LoginScreen();
+        }
+        if (role == UserRole.father && !user.perfilCompleto) {
+          return const ProfileSetupScreen();
         }
         return child;
       },

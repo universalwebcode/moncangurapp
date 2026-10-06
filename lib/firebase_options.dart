@@ -1,9 +1,6 @@
-/// Client config recovered from the public web bundle at moncangur.web.app.
-///
-/// These values are the Firebase *web* options already shipped in main.dart.js.
-/// This reconstruction does not initialize Firebase and does not read or write
-/// the production project. Wire them up only when you are ready to reconnect
-/// Auth, Firestore and Storage yourself.
+import 'package:firebase_core/firebase_core.dart';
+
+/// Client config for the Firebase project `moncangur`.
 class RecoveredFirebaseOptions {
   static const apiKey = 'AIzaSyCfoslyNEHX0rnNVhxAzSPZ0TmS3cbqn_U';
   static const appId = '1:922984930491:web:868fcf23a210b30a6f1d9e';
@@ -12,6 +9,15 @@ class RecoveredFirebaseOptions {
   static const authDomain = 'moncangur.firebaseapp.com';
   static const storageBucket = 'moncangur.firebasestorage.app';
 }
+
+const firebaseOptions = FirebaseOptions(
+  apiKey: RecoveredFirebaseOptions.apiKey,
+  appId: RecoveredFirebaseOptions.appId,
+  messagingSenderId: RecoveredFirebaseOptions.messagingSenderId,
+  projectId: RecoveredFirebaseOptions.projectId,
+  authDomain: RecoveredFirebaseOptions.authDomain,
+  storageBucket: RecoveredFirebaseOptions.storageBucket,
+);
 
 /// Firestore collections and fields named in the compiled client.
 const recoveredCollections = <String, List<String>>{

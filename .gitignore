@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Redsys merchant key. Deployed with Cloud Functions, never in the app.
+functions/.env
+functions/node_modules/

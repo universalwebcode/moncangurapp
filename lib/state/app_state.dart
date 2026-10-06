@@ -4,11 +4,14 @@ import '../domain/availability.dart';
 import '../domain/pricing.dart';
 import '../l10n/app_copy.dart';
 import '../models/models.dart';
+import '../services/account_gateway.dart';
 
 class AppState extends ChangeNotifier {
-  AppState() {
+  AppState({this.accounts}) {
     _seed();
   }
+
+  final AccountGateway? accounts;
 
   AppLang lang = AppLang.ca;
   AppUser? user;
@@ -37,51 +40,148 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  AppUser? login(String email, String password) {
+  Future<AppUser?> login(String email, String password) async {
     final normalized = email.trim().toLowerCase();
     if (!_validEmail(normalized)) {
       flash(tr('emailInvalidShort'));
       return null;
     }
-    for (final account in users) {
-      if (account.email == normalized && account.password == password) {
-        user = account;
-        banner = null;
-        notifyListeners();
-        return account;
+    final gateway = accounts;
+    if (gateway == null) {
+      for (final account in users) {
+        if (account.email == normalized && account.password == password) {
+          user = account;
+          banner = null;
+          notifyListeners();
+          return account;
+        }
       }
+      flash(tr('wrongCredentials'));
+      return null;
     }
-    flash(tr('wrongCredentials'));
-    return null;
+    try {
+      final account = await gateway.signIn(email: normalized, password: password);
+      user = account;
+      banner = null;
+      notifyListeners();
+      return account;
+    } on AccountFailure catch (error) {
+      flash(tr(error.code));
+      return null;
+    }
   }
 
-  String? signUp({
+  Future<String?> signUp({
     required String nombre,
     required String email,
     required String password,
     required String confirm,
-  }) {
+  }) async {
     final normalized = email.trim().toLowerCase();
     if (!_validEmail(normalized)) return tr('invalidEmail');
     if (password.length < 6) return tr('weakPassword');
     if (password != confirm) return tr('mismatch');
-    if (users.any((u) => u.email == normalized)) return tr('emailTaken');
-    users.add(
-      AppUser(
-        id: 'u${users.length + 1}',
-        nombre: nombre.trim().isEmpty ? normalized : nombre.trim(),
-        email: normalized,
-        password: password,
-        role: UserRole.father,
-      ),
-    );
+    final gateway = accounts;
+    if (gateway == null) {
+      if (users.any((u) => u.email == normalized)) return tr('emailTaken');
+      users.add(
+        AppUser(
+          id: 'u${users.length + 1}',
+          nombre: nombre.trim().isEmpty ? normalized : nombre.trim(),
+          email: normalized,
+          password: password,
+          role: UserRole.father,
+        ),
+      );
+      return null;
+    }
+    try {
+      await gateway.register(email: normalized, password: password, idioma: lang.name);
+      return null;
+    } on AccountFailure catch (error) {
+      return tr(error.code);
+    }
+  }
+
+  Future<String?> resetPassword(String email) async {
+    final normalized = email.trim().toLowerCase();
+    if (!_validEmail(normalized)) return tr('invalidEmail');
+    final gateway = accounts;
+    if (gateway == null) return null;
+    try {
+      await gateway.resetPassword(normalized);
+      return null;
+    } on AccountFailure catch (error) {
+      return tr(error.code);
+    }
+  }
+
+  Future<String?> completeFatherProfile({
+    required String displayName,
+    required String telefono,
+    required String direccion,
+    required String idioma,
+    required Map<String, Object?> perfil,
+  }) async {
+    final account = user;
+    if (account == null) return tr('mustSignIn');
+    final gateway = accounts;
+    if (gateway != null) {
+      try {
+        await gateway.saveFatherProfile(
+          uid: account.id,
+          displayName: displayName,
+          telefono: telefono,
+          direccion: direccion,
+          idioma: idioma,
+          perfil: perfil,
+        );
+      } on AccountFailure catch (error) {
+        return tr(error.code);
+      }
+    }
+    if (displayName.isNotEmpty) account.nombre = displayName;
+    account.telefono = telefono;
+    account.direccion = direccion;
+    account.perfil = Map<String, dynamic>.from(perfil);
+    notifyListeners();
     return null;
+  }
+
+  Future<void> refreshServices() async {
+    final gateway = accounts;
+    if (gateway == null) return;
+    try {
+      final remote = await gateway.loadServices();
+      if (remote.isEmpty) return;
+      services
+        ..clear()
+        ..addAll(remote);
+      notifyListeners();
+    } on AccountFailure {
+      return;
+    }
+  }
+
+  Future<void> refreshCanguros() async {
+    final gateway = accounts;
+    if (gateway == null) return;
+    try {
+      final remote = await gateway.loadCanguros();
+      canguros
+        ..clear()
+        ..addAll(remote);
+      notifyListeners();
+    } on AccountFailure {
+      return;
+    }
   }
 
   void signOut() {
     user = null;
     banner = null;
     notifyListeners();
+    accounts?.signOut();
   }
 
   bool changePassword(String current, String next, String confirm) {
@@ -133,7 +233,7 @@ class AppState extends ChangeNotifier {
     }).toList();
   }
 
-  Booking? createBooking({
+  Future<Booking?> placeReserva({
     required ServiceOffer service,
     required DateTime date,
     required String start,
@@ -141,6 +241,64 @@ class AppState extends ChangeNotifier {
     required int children,
     required String address,
     required CangurProfile cangur,
+    double? total,
+    String? caregiverNames,
+    String notes = '',
+  }) async {
+    final account = user;
+    if (account == null) return null;
+    final hours = hoursBetween(start, end);
+    if (hours == null) return null;
+    final price = Pricing.quote(service: service, children: children, hours: hours);
+    final amount = total ?? price.total;
+    String? remoteId;
+    final gateway = accounts;
+    if (gateway != null) {
+      remoteId = await gateway.saveReserva(
+        padreId: account.id,
+        padreNombre: account.nombre,
+        tipoServicio: service.tipoServicio,
+        fecha: date,
+        horaInicio: start,
+        horaFin: end,
+        numeroNinos: children,
+        direccion: address,
+        canguroId: cangur.userId,
+        canguroNombre: caregiverNames ?? cangur.nombre,
+        total: amount,
+        servicioId: service.id,
+        duracionHoras: hours,
+        notas: notes,
+      );
+    }
+    return createBooking(
+      id: remoteId,
+      service: service,
+      date: date,
+      start: start,
+      end: end,
+      children: children,
+      address: address,
+      cangur: cangur,
+      total: amount,
+      caregiverNames: caregiverNames,
+      notes: notes,
+    );
+  }
+
+  Booking? createBooking({
+    String? id,
+    required ServiceOffer service,
+    required DateTime date,
+    required String start,
+    required String end,
+    required int children,
+    required String address,
+    required CangurProfile cangur,
+    double? total,
+    String? caregiverNames,
+    String notes = '',
+    bool paid = false,
   }) {
     final account = user;
     if (account == null) return null;
@@ -148,7 +306,7 @@ class AppState extends ChangeNotifier {
     if (hours == null) return null;
     final price = Pricing.quote(service: service, children: children, hours: hours);
     final booking = Booking(
-      id: 'r${bookings.length + 1}',
+      id: id ?? 'r${bookings.length + 1}',
       padreId: account.id,
       padreNombre: account.nombre,
       tipoServicio: service.tipoServicio,
@@ -158,10 +316,11 @@ class AppState extends ChangeNotifier {
       numeroNinos: children,
       direccionServicio: address.trim(),
       canguroId: cangur.userId,
-      canguroNombre: cangur.nombre,
-      estado: 'confirmada',
-      estadoPago: 'pendiente',
-      total: price.total,
+      canguroNombre: caregiverNames ?? cangur.nombre,
+      estado: paid ? 'confirmada' : 'pendiente',
+      estadoPago: paid ? 'pagada' : 'pendiente',
+      notas: notes,
+      total: total ?? price.total,
     );
     bookings.insert(0, booking);
     notifyListeners();
@@ -209,6 +368,77 @@ class AppState extends ChangeNotifier {
     bookings.insert(0, booking);
     notifyListeners();
     return quote;
+  }
+
+  Future<bool> submitFixRequest({
+    required ServiceOffer service,
+    required DateTime startDate,
+    required String start,
+    required String end,
+    required int children,
+    required String resumen,
+    String direccion = '',
+  }) async {
+    final account = user;
+    if (account == null) {
+      flash(tr('mustSignIn'));
+      return false;
+    }
+    final hours = hoursBetween(start, end) ?? 0;
+    final place = direccion.trim().isEmpty ? account.direccion : direccion.trim();
+    String? remoteId;
+    final gateway = accounts;
+    if (gateway != null) {
+      try {
+        remoteId = await gateway.saveReserva(
+          padreId: account.id,
+          padreNombre: account.nombre,
+          tipoServicio: service.tipoServicio,
+          fecha: startDate,
+          horaInicio: start,
+          horaFin: end,
+          numeroNinos: children,
+          direccion: place,
+          canguroId: '',
+          canguroNombre: '',
+          total: 0,
+          servicioId: service.id,
+          duracionHoras: hours,
+          notas: resumen,
+          estado: 'presupuesto',
+        );
+      } on AccountFailure catch (error) {
+        flash(tr(error.code));
+        return false;
+      }
+    }
+    final quote = QuoteRequest(
+      id: remoteId ?? 'q${quotes.length + 1}',
+      padreId: account.id,
+      tipo: service.tipoServicio,
+      resumen: resumen,
+      createdAt: DateTime.now(),
+    );
+    quotes.insert(0, quote);
+    bookings.insert(
+      0,
+      Booking(
+        id: remoteId ?? 'r${bookings.length + 1}',
+        padreId: account.id,
+        padreNombre: account.nombre,
+        tipoServicio: service.tipoServicio,
+        fecha: DateTime(startDate.year, startDate.month, startDate.day),
+        horaInicio: start,
+        horaFin: end,
+        numeroNinos: children,
+        direccionServicio: place,
+        estado: 'presupuesto',
+        estadoPago: 'pendiente',
+        notas: resumen,
+      ),
+    );
+    notifyListeners();
+    return true;
   }
 
   void assignCangur(String bookingId, String canguroId) {
