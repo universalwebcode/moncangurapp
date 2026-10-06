@@ -21,6 +21,15 @@ class _AdminScreenState extends State<AdminScreen> {
   String _filter = 'all';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppScope.of(context).refreshBookings();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     return Scaffold(

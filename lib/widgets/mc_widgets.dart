@@ -171,6 +171,7 @@ Future<String?> pickTime(BuildContext context, String current) async {
 String statusLabel(AppState state, Booking booking) {
   switch (booking.estadoPago) {
     case 'pagada':
+    case 'pagado':
       return state.tr('paid');
     case 'fallido':
       return state.tr('failed');
@@ -183,7 +184,7 @@ String statusLabel(AppState state, Booking booking) {
 }
 
 Color statusColor(Booking booking) {
-  if (booking.estadoPago == 'pagada') return AppColors.success;
+  if (booking.estadoPago == 'pagada' || booking.estadoPago == 'pagado') return AppColors.success;
   if (booking.estadoPago == 'fallido') return AppColors.danger;
   if (booking.estado == 'presupuesto') return AppColors.teal;
   return AppColors.brown;

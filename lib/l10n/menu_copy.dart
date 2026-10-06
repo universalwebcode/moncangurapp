@@ -18,6 +18,12 @@ const _rows = <String, List<String>>{
   'privacy': ['Política de privacitat', 'Política de privacidad', 'Privacy policy', 'Politique de confidentialité'],
   'cancel': ['Política de cancel·lació', 'Política de cancelación', 'Cancellation policy', 'Politique d’annulation'],
   'soon': ['Aviat', 'Pronto', 'Soon', 'Bientôt'],
+  'detail': ['Detall de la reserva', 'Detalle de la reserva', 'Booking details', 'Détail de la réservation'],
+  'status': ['Estat', 'Estado', 'Status', 'État'],
+  'payment': ['Pagament', 'Pago', 'Payment', 'Paiement'],
+  'family': ['Família', 'Familia', 'Family', 'Famille'],
+  'notes': ['Notes', 'Notas', 'Notes', 'Notes'],
+  'pay': ['Pagar', 'Pagar', 'Pay', 'Payer'],
   'termsBody': [
     'En usar Mon Cangur acceptes les condicions del servei. La reserva queda confirmada quan l\'equip l\'accepta. Per a qualsevol dubte, escriu a info@moncangur.ad.',
     'Al usar Mon Cangur aceptas las condiciones del servicio. La reserva queda confirmada cuando el equipo la acepta. Para cualquier duda, escribe a info@moncangur.ad.',

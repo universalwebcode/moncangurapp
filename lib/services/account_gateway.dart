@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../data/team_cangurs.dart';
 import '../domain/availability.dart';
 import '../models/models.dart';
 
@@ -23,6 +24,19 @@ abstract class AccountGateway {
   });
   Future<List<ServiceOffer>> loadServices();
   Future<List<CangurProfile>> loadCanguros();
+  Future<void> ensureTeamCanguros();
+  Future<List<Booking>> loadReservas({required String userId, required UserRole role});
+  Future<void> saveCangurProfile({
+    required String uid,
+    required String displayName,
+    required bool active,
+    required String descripcion,
+    required int years,
+    required List<String> servicios,
+    required List<String> habilidades,
+    required List<String> certificaciones,
+    required Map<String, DayAvailability> week,
+  });
   Future<String> saveReserva({
     required String padreId,
     required String padreNombre,
@@ -181,6 +195,24 @@ class FirebaseAccountGateway implements AccountGateway {
   }
 
   @override
+  Future<List<Booking>> loadReservas({required String userId, required UserRole role}) async {
+    try {
+      final collection = FirebaseFirestore.instance.collection('reservas');
+      final Query<Map<String, dynamic>> query = switch (role) {
+        UserRole.father => collection.where('padreId', isEqualTo: userId),
+        UserRole.cangur => collection.where('canguroId', isEqualTo: userId),
+        UserRole.admin => collection,
+      };
+      final snap = await query.get();
+      final bookings = [for (final doc in snap.docs) _bookingFromFirestore(doc.id, doc.data())];
+      bookings.sort((a, b) => b.fecha.compareTo(a.fecha));
+      return bookings;
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
   Future<List<ServiceOffer>> loadServices() async {
     try {
       final snap = await FirebaseFirestore.instance.collection('servicios').get();
@@ -231,6 +263,53 @@ class FirebaseAccountGateway implements AccountGateway {
       throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
     }
   }
+
+  @override
+  Future<void> saveCangurProfile({
+    required String uid,
+    required String displayName,
+    required bool active,
+    required String descripcion,
+    required int years,
+    required List<String> servicios,
+    required List<String> habilidades,
+    required List<String> certificaciones,
+    required Map<String, DayAvailability> week,
+  }) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('users').doc(uid).set({
+        'display_name': displayName,
+        'role': 'cangur',
+        'uid': uid,
+      }, SetOptions(merge: true));
+      await firestore.collection('perfiles_canguro').doc(uid).set({
+        'userId': uid,
+        'active': active,
+        'activo': active,
+        'descripcionPersonal': descripcion,
+        'experienciaAnos': years,
+        'servicios': servicios,
+        'habilidades': habilidades,
+        'certificaciones': certificaciones,
+        'disponibilidad': {
+          for (final entry in week.entries)
+            entry.key: {
+              'disponible': entry.value.disponible,
+              'franjas': [
+                for (final band in entry.value.franjas) {'inicio': band.inicio, 'fin': band.fin},
+              ],
+            },
+        },
+        'fechaActualizacion': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<void> ensureTeamCanguros() => _ensureTeamCanguros();
 
   @override
   Future<void> signOut() => FirebaseAuth.instance.signOut();
@@ -334,12 +413,141 @@ CangurProfile _cangurFromFirestore(
     servicios: _stringList(data['servicios']),
     certificaciones: _stringList(data['certificaciones']),
     idiomas: languages.isEmpty ? skills : languages,
+    habilidades: skills,
     week: _weekFrom(data['disponibilidad']),
     activo: data['active'] != false && data['activo'] != false,
     aniosExperiencia: years is num ? years.toInt() : int.tryParse('$years') ?? 0,
     photoUrl: photo is String && photo.trim().isNotEmpty ? photo.trim() : null,
+    slug: data['slug'] is String ? (data['slug'] as String).trim() : '',
+    rol: data['rol'] is String ? data['rol'] as String : '',
+    badge: data['badge'] is String ? data['badge'] as String : '',
+    color: _colorOf(data['color']),
+    qui: data['qui'] is String ? data['qui'] as String : '',
+    trayectoria: data['trayectoria'] is String ? data['trayectoria'] as String : '',
+    agrada: data['agrada'] is String ? data['agrada'] as String : '',
+    puntFort: data['puntFort'] is String ? data['puntFort'] as String : '',
     exceptions: exceptions,
   );
+}
+
+int _colorOf(Object? raw) {
+  if (raw is int) return raw;
+  if (raw is num) return raw.toInt();
+  return 0xFF8CA598;
+}
+
+Booking _bookingFromFirestore(String docId, Map<String, dynamic> data) {
+  final storedId = data['id'];
+  final carerId = data['canguroId'];
+  final carerName = data['canguroNombre'];
+  final total = data['total'] ?? data['totalPagado'];
+  final children = data['numeroNinos'];
+  final service = data['tipoServicio'] ?? data['servicioId'];
+  return Booking(
+    id: storedId is String && storedId.isNotEmpty ? storedId : docId,
+    padreId: data['padreId'] is String ? data['padreId'] as String : '',
+    padreNombre: data['padreNombre'] is String ? data['padreNombre'] as String : '',
+    tipoServicio: service is String && service.isNotEmpty ? service : 'ocasional',
+    fecha: _dateFrom(data['fechaServicio'] ?? data['fechaCreacion'] ?? data['created_time']),
+    horaInicio: data['horaInicio'] is String ? data['horaInicio'] as String : '',
+    horaFin: data['horaFin'] is String ? data['horaFin'] as String : '',
+    numeroNinos: children is num ? children.toInt() : int.tryParse('$children') ?? 0,
+    direccionServicio: data['direccionServicio'] is String ? data['direccionServicio'] as String : '',
+    canguroId: carerId is String && carerId.isNotEmpty ? carerId : null,
+    canguroNombre: carerName is String && carerName.isNotEmpty ? carerName : null,
+    estado: data['estado'] is String ? data['estado'] as String : 'pendiente',
+    estadoPago: data['estadoPago'] is String ? data['estadoPago'] as String : 'pendiente',
+    notas: data['notas'] is String ? data['notas'] as String : '',
+    total: total is num ? total.toDouble() : double.tryParse('$total'),
+  );
+}
+
+DateTime _dateFrom(Object? raw) {
+  if (raw is Timestamp) return raw.toDate();
+  if (raw is DateTime) return raw;
+  if (raw is String) return DateTime.tryParse(raw) ?? DateTime.now();
+  return DateTime.now();
+}
+
+Future<void> _ensureTeamCanguros() async {
+  try {
+    final firestore = FirebaseFirestore.instance;
+    final profiles = await firestore.collection('perfiles_canguro').get();
+    final ids = [for (final doc in profiles.docs) _profileUserId(doc.id, doc.data())];
+    final users = await _usersById(firestore, ids);
+    final canMatchNames = users.isNotEmpty || profiles.docs.isEmpty;
+    for (final story in teamStories) {
+      QueryDocumentSnapshot<Map<String, dynamic>>? match;
+      for (final doc in profiles.docs) {
+        final data = doc.data();
+        final uid = _profileUserId(doc.id, data);
+        final user = users[uid];
+        final storedName = user?['display_name'] ?? user?['nombre'];
+        final slug = data['slug'];
+        final linked = slug == story.slug || (storedName is String && samePerson(storedName, story));
+        if (linked) {
+          match = doc;
+          break;
+        }
+      }
+      try {
+        if (match != null) {
+          final qui = match.data()['qui'];
+          if (qui is String && qui.trim().isNotEmpty) continue;
+          await firestore.collection('perfiles_canguro').doc(match.id).set(_teamBio(story), SetOptions(merge: true));
+          continue;
+        }
+        if (!canMatchNames) continue;
+        final id = 'team_${story.slug}';
+        await firestore.collection('users').doc(id).set({
+          'display_name': story.nombre,
+          'role': 'cangur',
+          'uid': id,
+          'created_time': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        await firestore.collection('perfiles_canguro').doc(id).set({
+          ..._teamBio(story),
+          'userId': id,
+          'active': true,
+          'activo': true,
+          'descripcionPersonal': story.qui,
+          'experienciaAnos': story.experienciaAnos,
+          'servicios': ['ocasional', 'repaso', 'emergencia', 'fijo', 'eventos'],
+          'certificaciones': <String>[],
+          'tarifaPorHora': 0,
+          'numeroReviews': 0,
+          'ratingPromedio': 0,
+          'disponibilidad': {
+            for (final day in weekDays)
+              day: {
+                'disponible': true,
+                'franjas': [
+                  {'inicio': '08:00', 'fin': '23:00'},
+                ],
+              },
+          },
+        });
+      } on FirebaseException {
+        continue;
+      }
+    }
+  } on FirebaseException {
+    return;
+  }
+}
+
+Map<String, Object?> _teamBio(TeamStory story) {
+  return {
+    'slug': story.slug,
+    'rol': story.rol,
+    'badge': story.badge,
+    'color': story.color,
+    'qui': story.qui,
+    'trayectoria': story.trayectoria,
+    'agrada': story.agrada,
+    'puntFort': story.puntFort,
+    'idiomas': story.idiomas,
+  };
 }
 
 String authFailureCode(String code) {

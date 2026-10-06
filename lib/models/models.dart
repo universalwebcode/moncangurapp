@@ -158,8 +158,18 @@ class CangurProfile {
     this.activo = true,
     this.aniosExperiencia = 0,
     this.photoUrl,
+    this.slug = '',
+    this.rol = '',
+    this.badge = '',
+    this.color = 0xFF8CA598,
+    this.qui = '',
+    this.trayectoria = '',
+    this.agrada = '',
+    this.puntFort = '',
+    List<String>? habilidades,
     List<AvailabilityException>? exceptions,
-  }) : exceptions = exceptions ?? [];
+  }) : habilidades = habilidades ?? [],
+       exceptions = exceptions ?? [];
 
   final String userId;
   String nombre;
@@ -173,6 +183,15 @@ class CangurProfile {
   bool activo;
   int aniosExperiencia;
   final String? photoUrl;
+  final String slug;
+  final String rol;
+  final String badge;
+  final int color;
+  final String qui;
+  final String trayectoria;
+  final String agrada;
+  final String puntFort;
+  List<String> habilidades;
   List<AvailabilityException> exceptions;
 }
 

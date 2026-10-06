@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../l10n/app_copy.dart';
 import '../models/models.dart';
 import '../widgets/mc_widgets.dart';
+import 'booking_detail_screen.dart';
 import 'extra_form_screen.dart';
 import 'fix_form_screen.dart';
 import 'menu_screen.dart';
 import 'reserva_screen.dart';
+import 'team_cangur_screen.dart';
 
 class FatherScreen extends StatefulWidget {
   const FatherScreen({super.key});
@@ -27,6 +29,7 @@ class _FatherScreenState extends State<FatherScreen> {
       final state = AppScope.of(context);
       state.refreshServices();
       state.refreshCanguros();
+      state.refreshBookings();
     });
   }
 
@@ -154,6 +157,8 @@ class _ServicesTab extends StatelessWidget {
                       );
                     },
             ),
+            const SizedBox(height: 28),
+            const TeamStrip(),
           ],
         ),
       ),
@@ -358,9 +363,20 @@ class _BookingCard extends StatelessWidget {
     final when = booking.horaInicio.isEmpty
         ? state.tr('schedulePending')
         : '${formatDate(booking.fecha)} · ${booking.horaInicio}–${booking.horaFin}';
-    return _SoftCard(
-      colors: colors,
-      child: Column(
+    return Material(
+      color: colors.card,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BookingDetailScreen(booking: booking))),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: colors.line, width: 1.5),
+          ),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -372,6 +388,7 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
               Text(statusLabel(state, booking), style: TextStyle(color: statusColor(booking), fontWeight: FontWeight.w800)),
+              Icon(Icons.chevron_right, color: colors.muted, size: 20),
             ],
           ),
           const SizedBox(height: 4),
@@ -384,9 +401,11 @@ class _BookingCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(booking.notas, style: TextStyle(color: colors.muted)),
             ),
-          if (booking.estadoPago == 'pagada' && booking.canguroId != null)
+          if ((booking.estadoPago == 'pagada' || booking.estadoPago == 'pagado') && booking.canguroId != null)
             TextButton(onPressed: () => _review(context), child: Text(state.tr('sendReview'))),
         ],
+          ),
+        ),
       ),
     );
   }

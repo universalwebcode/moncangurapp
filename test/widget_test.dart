@@ -279,4 +279,98 @@ void main() {
     expect(find.text('Política de privacitat'), findsOneWidget);
     expect(find.text('Política de cancel·lació'), findsOneWidget);
   });
+
+  testWidgets('a booking opens its details', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(500, 1800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final state = AppState();
+    state.user = state.users.firstWhere((user) => user.email == 'familia@moncangur.ad');
+    state.bookings.add(
+      Booking(
+        id: 'r1',
+        padreId: 'familia',
+        padreNombre: 'Marta Riba',
+        tipoServicio: 'ocasional',
+        fecha: DateTime(2026, 10, 8),
+        horaInicio: '16:00',
+        horaFin: '19:00',
+        numeroNinos: 2,
+        direccionServicio: 'Carrer de la Unió, Andorra la Vella',
+        canguroNombre: 'Júlia',
+        notas: 'Portar berenar',
+        total: 84,
+      ),
+    );
+    await tester.pumpWidget(CangurApp(state: state));
+    tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/father');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Reserves'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ocasional'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detall de la reserva'), findsOneWidget);
+    expect(find.text('Júlia'), findsOneWidget);
+    expect(find.text('Carrer de la Unió, Andorra la Vella'), findsOneWidget);
+    expect(find.text('16:00 – 19:00'), findsOneWidget);
+    expect(find.text('Portar berenar'), findsOneWidget);
+    expect(find.text('84.00 €'), findsOneWidget);
+    expect(find.text('Pagar'), findsOneWidget);
+    await tester.tap(find.text('Pagar'));
+    await tester.pumpAndSettle();
+    expect(find.text('El navegador ha bloquejat la finestra de pagament.'), findsOneWidget);
+  });
+
+  testWidgets('the home screen opens a cangur profile', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(500, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final state = AppState();
+    state.user = state.users.firstWhere((user) => user.email == 'familia@moncangur.ad');
+    await tester.pumpWidget(CangurApp(state: state));
+    tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/father');
+    await tester.pumpAndSettle();
+
+    expect(find.text('LES NOSTRES CANGURS'), findsOneWidget);
+    await tester.tap(find.text('Júlia'));
+    await tester.pumpAndSettle();
+    expect(find.text('La nostra cangur'), findsOneWidget);
+    expect(find.text('Júlia Lima'), findsOneWidget);
+    expect(find.text('Fundadora'), findsOneWidget);
+    expect(find.text('Qui és'), findsOneWidget);
+    expect(find.text('Reservar un servei'), findsOneWidget);
+  });
+
+  testWidgets('a cangur sees the agenda and can save the professional profile', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(500, 1800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final state = AppState();
+    state.user = state.users.firstWhere((user) => user.email == 'cangur@moncangur.ad');
+    await tester.pumpWidget(CangurApp(state: state));
+    tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/cangur');
+    await tester.pumpAndSettle();
+
+    expect(find.text('La meva agenda'), findsOneWidget);
+    expect(find.text('Totes'), findsOneWidget);
+    expect(find.text('Pendents'), findsOneWidget);
+    expect(find.text('Completades'), findsOneWidget);
+    expect(find.text('No hi ha reserves per a aquest dia'), findsOneWidget);
+
+    await tester.tap(find.text('Perfil'));
+    await tester.pumpAndSettle();
+    expect(find.text('Editar perfil professional'), findsOneWidget);
+    expect(find.text('Laia Serra'), findsOneWidget);
+    expect(find.text('Primers auxilis'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.byKey(const Key('cangur-about')), 400, scrollable: find.byType(Scrollable).last);
+    await tester.enterText(find.byKey(const Key('cangur-about')), 'Nova descripció');
+    await tester.pump();
+    await tester.scrollUntilVisible(find.text('Desar canvis'), 300, scrollable: find.byType(Scrollable).last);
+    await tester.tap(find.text('Desar canvis'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Canvis desats'), findsOneWidget);
+    expect(state.profileFor('laia')!.descripcionPersonal, 'Nova descripció');
+    expect(state.profileFor('laia')!.servicios, contains('ocasional'));
+  });
 }

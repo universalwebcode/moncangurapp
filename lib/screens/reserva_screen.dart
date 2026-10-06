@@ -128,9 +128,10 @@ String _langChip(String name) {
 }
 
 class ReservaScreen extends StatefulWidget {
-  const ReservaScreen({this.initialServiceId, super.key});
+  const ReservaScreen({this.initialServiceId, this.initialCangurId, super.key});
 
   final String? initialServiceId;
+  final String? initialCangurId;
 
   @override
   State<ReservaScreen> createState() => _ReservaScreenState();
@@ -143,6 +144,7 @@ class _ReservaScreenState extends State<ReservaScreen> {
   int _step = 1;
   bool _done = false;
   bool _seeded = false;
+  bool _appliedCangur = false;
   bool _saving = false;
   bool _confirming = false;
   Booking? _payBooking;
@@ -176,16 +178,29 @@ class _ReservaScreenState extends State<ReservaScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_seeded) return;
-    _seeded = true;
-    final id = widget.initialServiceId;
-    if (id == null) return;
-    for (final service in AppScope.of(context).services) {
-      if (service.id != id || _kindOf(service) == _Kind.form) continue;
-      _service = service;
-      final minHours = _minHoursOf(service);
-      if (_duration < minHours) _duration = minHours;
+    if (!_seeded) {
+      _seeded = true;
+      final id = widget.initialServiceId;
+      if (id != null) {
+        for (final service in AppScope.of(context).services) {
+          if (service.id != id || _kindOf(service) == _Kind.form) continue;
+          _service = service;
+          final minHours = _minHoursOf(service);
+          if (_duration < minHours) _duration = minHours;
+        }
+      }
     }
+    _keepRequestedCangur();
+  }
+
+  void _keepRequestedCangur({bool force = false}) {
+    if (_appliedCangur && !force) return;
+    final id = widget.initialCangurId;
+    if (id == null || id.isEmpty) return;
+    final known = AppScope.of(context).canguros.any((profile) => profile.userId == id);
+    if (!known) return;
+    if (!_picked.contains(id)) _picked.add(id);
+    _appliedCangur = true;
   }
 
   @override
@@ -239,6 +254,7 @@ class _ReservaScreenState extends State<ReservaScreen> {
       if (_children > _maxKidsOf(service)) _children = _maxKidsOf(service);
       _picked.clear();
       _date = null;
+      _keepRequestedCangur(force: true);
     });
   }
 

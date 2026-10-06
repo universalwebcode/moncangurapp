@@ -64,6 +64,7 @@ class AppState extends ChangeNotifier {
       user = account;
       banner = null;
       notifyListeners();
+      await refreshBookings();
       return account;
     } on AccountFailure catch (error) {
       flash(tr(error.code));
@@ -163,10 +164,26 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshBookings() async {
+    final gateway = accounts;
+    final account = user;
+    if (gateway == null || account == null) return;
+    try {
+      final remote = await gateway.loadReservas(userId: account.id, role: account.role);
+      bookings
+        ..clear()
+        ..addAll(remote);
+      notifyListeners();
+    } on AccountFailure {
+      return;
+    }
+  }
+
   Future<void> refreshCanguros() async {
     final gateway = accounts;
     if (gateway == null) return;
     try {
+      await gateway.ensureTeamCanguros();
       final remote = await gateway.loadCanguros();
       canguros
         ..clear()
@@ -457,6 +474,39 @@ class AppState extends ChangeNotifier {
       booking.estado = 'confirmada';
     }
     flash(tr('assignedOk'));
+  }
+
+  Future<String?> saveCangurProfile(CangurProfile profile) async {
+    final index = canguros.indexWhere((item) => item.userId == profile.userId);
+    if (index >= 0) {
+      canguros[index] = profile;
+    } else {
+      canguros.add(profile);
+    }
+    if (user?.id == profile.userId) user!.nombre = profile.nombre;
+    final gateway = accounts;
+    if (gateway == null) {
+      notifyListeners();
+      return null;
+    }
+    try {
+      await gateway.saveCangurProfile(
+        uid: profile.userId,
+        displayName: profile.nombre,
+        active: profile.activo,
+        descripcion: profile.descripcionPersonal,
+        years: profile.aniosExperiencia,
+        servicios: profile.servicios,
+        habilidades: profile.habilidades,
+        certificaciones: profile.certificaciones,
+        week: profile.week,
+      );
+      notifyListeners();
+      return null;
+    } on AccountFailure catch (error) {
+      notifyListeners();
+      return error.code;
+    }
   }
 
   void saveCangur(CangurProfile profile) {
