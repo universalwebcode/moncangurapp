@@ -27,9 +27,10 @@ String routeForRole(UserRole role) {
 }
 
 class TimeBand {
-  const TimeBand(this.inicio, this.fin);
+  const TimeBand(this.inicio, this.fin, {this.torn});
   final String inicio;
   final String fin;
+  final String? torn;
 }
 
 class DayAvailability {
@@ -167,8 +168,10 @@ class CangurProfile {
     this.agrada = '',
     this.puntFort = '',
     List<String>? habilidades,
+    List<String>? fotos,
     List<AvailabilityException>? exceptions,
   }) : habilidades = habilidades ?? [],
+       fotos = fotos ?? [],
        exceptions = exceptions ?? [];
 
   final String userId;
@@ -192,6 +195,7 @@ class CangurProfile {
   final String agrada;
   final String puntFort;
   List<String> habilidades;
+  List<String> fotos;
   List<AvailabilityException> exceptions;
 }
 
@@ -231,6 +235,40 @@ class Booking {
   double? total;
 }
 
+class ChatPreview {
+  ChatPreview({
+    required this.reservaId,
+    required this.chatId,
+    this.ultimoMensaje = '',
+    this.ultimoMensajeFecha,
+  });
+
+  final String reservaId;
+  final String chatId;
+  final String ultimoMensaje;
+  DateTime? ultimoMensajeFecha;
+}
+
+class ChatMessage {
+  ChatMessage({
+    required this.id,
+    required this.remitenteId,
+    required this.fecha,
+    this.texto = '',
+    this.imageUrl = '',
+    this.tipo = 'text',
+    List<String>? vistoPor,
+  }) : vistoPor = vistoPor ?? [];
+
+  final String id;
+  final String remitenteId;
+  final DateTime fecha;
+  final String texto;
+  final String imageUrl;
+  final String tipo;
+  final List<String> vistoPor;
+}
+
 class Review {
   Review({
     required this.id,
@@ -241,6 +279,7 @@ class Review {
     required this.trato,
     required this.profesionalismo,
     required this.comentario,
+    this.compartir = false,
   });
 
   final String id;
@@ -251,8 +290,16 @@ class Review {
   final int trato;
   final int profesionalismo;
   final String comentario;
+  final bool compartir;
 
   double get rating => (puntualidad + trato + profesionalismo) / 3;
+
+  int get stars {
+    final rounded = rating.round();
+    if (rounded < 1) return 1;
+    if (rounded > 5) return 5;
+    return rounded;
+  }
 }
 
 class QuoteRequest {

@@ -57,7 +57,7 @@ const teamStories = <TeamStory>[
     slug: 'anna',
     nombre: 'Anna',
     color: 0xFF6E82A6,
-    rol: "Mestra d'educació infantil i primària",
+    rol: "Mestra d'educació infantil · 8 anys en escola bressol",
     idiomas: ['Català', 'Castellà', 'Anglès', 'Francès'],
     experienciaAnos: 8,
     qui:
@@ -72,7 +72,7 @@ const teamStories = <TeamStory>[
     slug: 'carla',
     nombre: 'Carla',
     color: 0xFFA98E7B,
-    rol: 'Futura educadora social',
+    rol: 'Batxillerat social · futura Educació Social',
     idiomas: ['Català', 'Castellà', 'Portuguès'],
     experienciaAnos: 1,
     qui:
@@ -88,7 +88,7 @@ const teamStories = <TeamStory>[
     nombre: 'Júlia Lima',
     color: 0xFF8CA598,
     badge: 'Fundadora',
-    rol: 'Psicòloga i educadora',
+    rol: 'Psicòloga i educadora · +4 anys amb infants a Andorra',
     idiomas: ['Català', 'Castellà', 'Anglès', 'Portuguès'],
     experienciaAnos: 4,
     qui:
@@ -104,7 +104,7 @@ const teamStories = <TeamStory>[
     slug: 'noha',
     nombre: 'Noha',
     color: 0xFF9487B3,
-    rol: 'Educadora infantil',
+    rol: 'Educadora infantil · 2 anys en escola bressol',
     idiomas: ['Català', 'Castellà', 'Anglès', 'Francès'],
     experienciaAnos: 2,
     qui:
@@ -120,7 +120,7 @@ const teamStories = <TeamStory>[
     slug: 'paula',
     nombre: 'Paula',
     color: 0xFFC08457,
-    rol: 'Fisioterapeuta i professora de ioga',
+    rol: 'Fisioterapeuta i professora de ioga · +15 anys amb infants',
     idiomas: ['Castellà', 'Anglès', 'Francès', 'Català'],
     experienciaAnos: 15,
     qui:

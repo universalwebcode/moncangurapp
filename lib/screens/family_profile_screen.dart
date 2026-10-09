@@ -25,7 +25,8 @@ class _Kid {
     this.allergy = false,
     this.notes = '',
     this.needsDetails = false,
-  });
+    Map<String, Object?>? details,
+  }) : details = details ?? {};
 
   String name;
   int? day;
@@ -34,21 +35,29 @@ class _Kid {
   bool allergy;
   String notes;
   bool needsDetails;
+  Map<String, Object?> details;
 
   factory _Kid.fromMap(Map<dynamic, dynamic> data) {
+    final details = <String, Object?>{};
+    data.forEach((key, value) {
+      if (value != null) details['$key'] = value as Object?;
+    });
     return _Kid(
-      name: data['nombre'] is String ? data['nombre'] as String : '',
+      name: data['nombre'] is String ? data['nombre'] as String : (data['nom'] is String ? data['nom'] as String : ''),
       day: data['dia'] is num ? (data['dia'] as num).toInt() : null,
       month: data['mes'] is num ? (data['mes'] as num).toInt() : null,
       year: data['any'] is num ? (data['any'] as num).toInt() : null,
       allergy: data['allergia'] == true,
       notes: data['notes'] is String ? data['notes'] as String : '',
+      details: details,
     );
   }
 
   Map<String, Object?> toMap() {
     return {
+      ...details,
       'nombre': name.trim(),
+      'nom': name.trim(),
       'dia': day,
       'mes': month,
       'any': year,

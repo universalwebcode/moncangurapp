@@ -14,6 +14,7 @@ import '../services/redsys_payment.dart';
 import '../state/app_state.dart';
 import '../widgets/mc_widgets.dart';
 import 'extra_form_screen.dart';
+import 'event_form_screen.dart';
 import 'fix_form_screen.dart';
 import 'request_screen.dart';
 
@@ -22,7 +23,6 @@ enum _Kind { book, event, form }
 _Kind _kindOf(ServiceOffer service) {
   switch (service.tipoServicio) {
     case 'eventos':
-      return _Kind.event;
     case 'fijo':
     case 'repaso':
       return _Kind.form;
@@ -235,6 +235,10 @@ class _ReservaScreenState extends State<ReservaScreen> {
   }
 
   void _select(ServiceOffer service) {
+    if (service.tipoServicio == 'eventos') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => EventFormScreen(service: service)));
+      return;
+    }
     if (service.tipoServicio == 'fijo') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => FixFormScreen(service: service)));
       return;

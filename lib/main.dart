@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'models/models.dart';
 import 'screens/admin_screen.dart';
 import 'screens/auth_screen.dart';
+import 'screens/cangur_intro_screen.dart';
 import 'screens/cangur_screen.dart';
 import 'screens/father_screen.dart';
 import 'screens/profile_setup_screen.dart';
@@ -75,6 +76,9 @@ class CangurApp extends StatelessWidget {
         }
         if (role == UserRole.father && !user.perfilCompleto) {
           return const ProfileSetupScreen();
+        }
+        if (role == UserRole.cangur && !user.perfilCompleto) {
+          return const CangurIntroScreen();
         }
         return child;
       },

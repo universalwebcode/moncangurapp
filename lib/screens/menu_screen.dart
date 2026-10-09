@@ -4,14 +4,17 @@ import '../l10n/legal_docs.dart';
 import '../l10n/menu_copy.dart';
 import '../models/models.dart';
 import '../widgets/mc_widgets.dart';
+import 'chat_list_screen.dart';
 import 'family_profile_screen.dart';
+import 'infants_screen.dart';
 import 'legal_screen.dart';
 
 class MenuScreen extends StatelessWidget {
-  const MenuScreen({required this.onOpenServices, required this.onOpenBookings, super.key});
+  const MenuScreen({required this.onOpenServices, required this.onOpenBookings, required this.onOpenHistory, super.key});
 
   final VoidCallback onOpenServices;
   final VoidCallback onOpenBookings;
+  final VoidCallback onOpenHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +45,7 @@ class MenuScreen extends StatelessWidget {
                       title: mn(lang, 'account'),
                       rows: [
                         _RowData(Icons.person_outline, mn(lang, 'profile'), onTap: () => _openProfile(context)),
-                        _RowData(Icons.people_outline, mn(lang, 'kids'), onTap: () => _openProfile(context, scrollToKids: true)),
+                        _RowData(Icons.people_outline, mn(lang, 'kids'), onTap: () => _openInfants(context)),
                       ],
                     ),
                     _Group(
@@ -50,14 +53,14 @@ class MenuScreen extends StatelessWidget {
                       title: mn(lang, 'bookings'),
                       rows: [
                         _RowData(Icons.calendar_today_outlined, mn(lang, 'myBookings'), onTap: onOpenBookings),
-                        _RowData(Icons.schedule, mn(lang, 'history'), soon: mn(lang, 'soon')),
+                        _RowData(Icons.schedule, mn(lang, 'history'), onTap: onOpenHistory),
                       ],
                     ),
                     _Group(
                       colors: colors,
                       title: mn(lang, 'comms'),
                       rows: [
-                        _RowData(Icons.chat_bubble_outline, mn(lang, 'chat'), soon: mn(lang, 'soon')),
+                        _RowData(Icons.chat_bubble_outline, mn(lang, 'chat'), onTap: () => _openChat(context)),
                         _RowData(Icons.help_outline, mn(lang, 'help'), soon: mn(lang, 'soon')),
                       ],
                     ),
@@ -99,6 +102,14 @@ class MenuScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _openChat(BuildContext context) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+  }
+
+  void _openInfants(BuildContext context) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const InfantsScreen()));
   }
 
   void _openProfile(BuildContext context, {bool scrollToKids = false}) {

@@ -36,7 +36,29 @@ abstract class AccountGateway {
     required List<String> habilidades,
     required List<String> certificaciones,
     required Map<String, DayAvailability> week,
+    String rol = '',
+    List<String> idiomas = const [],
+    String qui = '',
+    String trayectoria = '',
+    String agrada = '',
+    String puntFort = '',
+    String? photoUrl,
+    List<String> fotos = const [],
   });
+  Future<void> saveAvailability({required String uid, required List<AvailabilityException> days});
+  Future<void> saveCangurIntro({
+    required String uid,
+    required String displayName,
+    required String rol,
+    required List<String> idiomas,
+    required String qui,
+    required String trayectoria,
+    required String agrada,
+    required String puntFort,
+    required bool activo,
+    String? photoUrl,
+  });
+  Future<void> markCangurProfileComplete(String uid);
   Future<String> saveReserva({
     required String padreId,
     required String padreNombre,
@@ -54,6 +76,23 @@ abstract class AccountGateway {
     required String notas,
     String estado = 'pendiente',
   });
+  Future<void> updateReservaEstado({required String id, required String estado});
+  Future<Map<String, ChatPreview>> loadChatPreviews({required String userId, required UserRole role});
+  Future<String> ensureChat({
+    required String reservaId,
+    required String padreId,
+    required String canguroId,
+    required String userId,
+  });
+  Stream<List<ChatMessage>> watchMessages(String chatId);
+  Future<void> sendChatMessage({
+    required String chatId,
+    required String remitenteId,
+    required String texto,
+    required String imageUrl,
+  });
+  Future<List<Review>> loadReviews({required String userId, bool forCarer = false});
+  Future<void> saveReview(Review review);
   Future<void> signOut();
 }
 
@@ -195,6 +234,15 @@ class FirebaseAccountGateway implements AccountGateway {
   }
 
   @override
+  Future<void> updateReservaEstado({required String id, required String estado}) async {
+    try {
+      await FirebaseFirestore.instance.collection('reservas').doc(id).set({'estado': estado}, SetOptions(merge: true));
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
   Future<List<Booking>> loadReservas({required String userId, required UserRole role}) async {
     try {
       final collection = FirebaseFirestore.instance.collection('reservas');
@@ -207,6 +255,140 @@ class FirebaseAccountGateway implements AccountGateway {
       final bookings = [for (final doc in snap.docs) _bookingFromFirestore(doc.id, doc.data())];
       bookings.sort((a, b) => b.fecha.compareTo(a.fecha));
       return bookings;
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<Map<String, ChatPreview>> loadChatPreviews({required String userId, required UserRole role}) async {
+    try {
+      final collection = FirebaseFirestore.instance.collection('chats');
+      final Query<Map<String, dynamic>> query = switch (role) {
+        UserRole.father => collection.where('padreId', isEqualTo: userId),
+        UserRole.cangur => collection.where('canguroId', isEqualTo: userId),
+        UserRole.admin => collection,
+      };
+      final snap = await query.get();
+      final previews = <String, ChatPreview>{};
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        if (data['activo'] == false) continue;
+        final reserva = data['reservaId'];
+        final reservaId = reserva is String && reserva.isNotEmpty ? reserva : doc.id;
+        final last = data['ultimoMensaje'];
+        previews[reservaId] = ChatPreview(
+          reservaId: reservaId,
+          chatId: doc.id,
+          ultimoMensaje: last is String ? last : '',
+          ultimoMensajeFecha: _optionalDate(data['ultimoMensajeFecha']),
+        );
+      }
+      return previews;
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<String> ensureChat({
+    required String reservaId,
+    required String padreId,
+    required String canguroId,
+    required String userId,
+  }) async {
+    try {
+      final collection = FirebaseFirestore.instance.collection('chats');
+      final existing = await collection.where('reservaId', isEqualTo: reservaId).limit(1).get();
+      final ref = existing.docs.isEmpty ? collection.doc(reservaId) : existing.docs.first.reference;
+      final creating = existing.docs.isEmpty;
+      final payload = <String, Object?>{
+        'activo': true,
+        'canguroId': canguroId,
+        'padreId': padreId,
+        'participantes': [padreId, canguroId],
+        'reservaId': reservaId,
+        'ultimoMensajeVistoPor': FieldValue.arrayUnion([userId]),
+      };
+      if (creating) {
+        payload['fechaCreacion'] = FieldValue.serverTimestamp();
+        payload['ultimoMensaje'] = '';
+        payload['ultimoMensajeFecha'] = FieldValue.serverTimestamp();
+        payload['ultimoMensajeVistoPor'] = [userId];
+      }
+      await ref.set(payload, SetOptions(merge: true));
+      return ref.id;
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Stream<List<ChatMessage>> watchMessages(String chatId) {
+    return FirebaseFirestore.instance.collection('chats').doc(chatId).collection('mensajes').snapshots().map((snap) {
+      final messages = [
+        for (final doc in snap.docs) _messageFromFirestore(doc.id, doc.data()),
+      ];
+      messages.sort((a, b) => a.fecha.compareTo(b.fecha));
+      return messages;
+    });
+  }
+
+  @override
+  Future<void> sendChatMessage({
+    required String chatId,
+    required String remitenteId,
+    required String texto,
+    required String imageUrl,
+  }) async {
+    try {
+      final chat = FirebaseFirestore.instance.collection('chats').doc(chatId);
+      final message = chat.collection('mensajes').doc();
+      final photo = imageUrl.trim();
+      final text = texto.trim();
+      await message.set({
+        'fechaCreacion': FieldValue.serverTimestamp(),
+        'imageUrl': photo,
+        'remitenteId': remitenteId,
+        'texto': text,
+        'tipo': photo.isNotEmpty ? 'image' : 'text',
+        'vistoPor': [remitenteId],
+      });
+      await chat.set({
+        'ultimoMensaje': text.isNotEmpty ? text : '📷',
+        'ultimoMensajeFecha': FieldValue.serverTimestamp(),
+        'ultimoMensajeVistoPor': [remitenteId],
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<List<Review>> loadReviews({required String userId, bool forCarer = false}) async {
+    try {
+      final snap = await FirebaseFirestore.instance.collection('reviews').where(forCarer ? 'canguroId' : 'padreId', isEqualTo: userId).get();
+      return [for (final doc in snap.docs) _reviewFromFirestore(doc.id, doc.data())];
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<void> saveReview(Review review) async {
+    try {
+      await FirebaseFirestore.instance.collection('reviews').doc(review.id).set({
+        'padreId': review.padreId,
+        'canguroId': review.canguroId,
+        'reservaId': review.reservaId,
+        'rating': review.rating,
+        'comentario': review.comentario,
+        'puntualidad': review.puntualidad,
+        'trato': review.trato,
+        'profesionalismo': review.profesionalismo,
+        'compartir': review.compartir,
+        'fechaCreacion': FieldValue.serverTimestamp(),
+      });
     } on FirebaseException catch (error) {
       throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
     }
@@ -275,18 +457,35 @@ class FirebaseAccountGateway implements AccountGateway {
     required List<String> habilidades,
     required List<String> certificaciones,
     required Map<String, DayAvailability> week,
+    String rol = '',
+    List<String> idiomas = const [],
+    String qui = '',
+    String trayectoria = '',
+    String agrada = '',
+    String puntFort = '',
+    String? photoUrl,
+    List<String> fotos = const [],
   }) async {
     try {
       final firestore = FirebaseFirestore.instance;
-      await firestore.collection('users').doc(uid).set({
+      final user = <String, Object?>{
         'display_name': displayName,
         'role': 'cangur',
         'uid': uid,
-      }, SetOptions(merge: true));
+      };
+      if (photoUrl != null && photoUrl.isNotEmpty) user['photo_url'] = photoUrl;
+      await firestore.collection('users').doc(uid).set(user, SetOptions(merge: true));
       await firestore.collection('perfiles_canguro').doc(uid).set({
         'userId': uid,
         'active': active,
         'activo': active,
+        'rol': rol,
+        'idiomas': idiomas,
+        'qui': qui,
+        'trayectoria': trayectoria,
+        'agrada': agrada,
+        'puntFort': puntFort,
+        'galeria': fotos,
         'descripcionPersonal': descripcion,
         'experienciaAnos': years,
         'servicios': servicios,
@@ -309,10 +508,105 @@ class FirebaseAccountGateway implements AccountGateway {
   }
 
   @override
+  Future<void> saveAvailability({required String uid, required List<AvailabilityException> days}) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final existing = await firestore.collection('excepciones_disponibilidad').where('userId', isEqualTo: uid).get();
+      final deletes = existing.docs.map((doc) => doc.reference).toList();
+      await _commit(firestore, deletes.length, (batch, index) => batch.delete(deletes[index]));
+      await _commit(firestore, days.length, (batch, index) {
+        final day = days[index];
+        final ref = firestore.collection('excepciones_disponibilidad').doc('${uid}_${day.fecha}');
+        batch.set(ref, {
+          'userId': uid,
+          'fecha': day.fecha,
+          'disponible': day.disponible,
+          'franjas': [
+            for (final band in day.franjas)
+              {
+                'inicio': band.inicio,
+                'fin': band.fin,
+                if (band.torn != null) 'torn': band.torn,
+              },
+          ],
+        });
+      });
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<void> saveCangurIntro({
+    required String uid,
+    required String displayName,
+    required String rol,
+    required List<String> idiomas,
+    required String qui,
+    required String trayectoria,
+    required String agrada,
+    required String puntFort,
+    required bool activo,
+    String? photoUrl,
+  }) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final user = <String, Object?>{
+        'display_name': displayName,
+        'role': 'cangur',
+        'uid': uid,
+        'perfilCompleto': true,
+      };
+      if (photoUrl != null && photoUrl.isNotEmpty) user['photo_url'] = photoUrl;
+      await firestore.collection('users').doc(uid).set(user, SetOptions(merge: true));
+      await firestore.collection('perfiles_canguro').doc(uid).set({
+        'userId': uid,
+        'rol': rol,
+        'idiomas': idiomas,
+        'qui': qui,
+        'trayectoria': trayectoria,
+        'agrada': agrada,
+        'puntFort': puntFort,
+        'descripcionPersonal': qui,
+        'activo': activo,
+        'active': activo,
+        'fechaActualizacion': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
+  Future<void> markCangurProfileComplete(String uid) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'perfilCompleto': true,
+        'role': 'cangur',
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (error) {
+      throw AccountFailure(error.code == 'permission-denied' ? 'rulesDenied' : 'networkError');
+    }
+  }
+
+  @override
   Future<void> ensureTeamCanguros() => _ensureTeamCanguros();
 
   @override
   Future<void> signOut() => FirebaseAuth.instance.signOut();
+}
+
+Future<void> _commit(FirebaseFirestore firestore, int count, void Function(WriteBatch batch, int index) write) async {
+  var start = 0;
+  while (start < count) {
+    final batch = firestore.batch();
+    final end = start + 400 < count ? start + 400 : count;
+    for (var index = start; index < end; index++) {
+      write(batch, index);
+    }
+    await batch.commit();
+    start = end;
+  }
 }
 
 Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _exceptionDocs(FirebaseFirestore firestore) async {
@@ -360,7 +654,8 @@ List<TimeBand> _bands(Object? raw) {
     final start = item['inicio'];
     final end = item['fin'];
     if (start is String && end is String && start.isNotEmpty && end.isNotEmpty) {
-      bands.add(TimeBand(start, end));
+      final torn = item['torn'];
+      bands.add(TimeBand(start, end, torn: torn is String && torn.isNotEmpty ? torn : null));
     }
   }
   return bands;
@@ -426,6 +721,7 @@ CangurProfile _cangurFromFirestore(
     trayectoria: data['trayectoria'] is String ? data['trayectoria'] as String : '',
     agrada: data['agrada'] is String ? data['agrada'] as String : '',
     puntFort: data['puntFort'] is String ? data['puntFort'] as String : '',
+    fotos: _stringList(data['galeria'] ?? data['fotos']),
     exceptions: exceptions,
   );
 }
@@ -467,6 +763,54 @@ DateTime _dateFrom(Object? raw) {
   if (raw is DateTime) return raw;
   if (raw is String) return DateTime.tryParse(raw) ?? DateTime.now();
   return DateTime.now();
+}
+
+DateTime? _optionalDate(Object? raw) {
+  if (raw == null) return null;
+  return _dateFrom(raw);
+}
+
+Review _reviewFromFirestore(String docId, Map<String, dynamic> data) {
+  int score(Object? raw, int fallback) {
+    if (raw is num) return raw.round();
+    return fallback;
+  }
+
+  final rating = data['rating'];
+  final fallback = rating is num ? rating.round() : 0;
+  return Review(
+    id: docId,
+    padreId: data['padreId'] is String ? data['padreId'] as String : '',
+    canguroId: data['canguroId'] is String ? data['canguroId'] as String : '',
+    reservaId: data['reservaId'] is String ? data['reservaId'] as String : '',
+    puntualidad: score(data['puntualidad'], fallback),
+    trato: score(data['trato'], fallback),
+    profesionalismo: score(data['profesionalismo'], fallback),
+    comentario: data['comentario'] is String ? data['comentario'] as String : '',
+    compartir: data['compartir'] == true,
+  );
+}
+
+ChatMessage _messageFromFirestore(String docId, Map<String, dynamic> data) {
+  final seen = <String>[];
+  final rawSeen = data['vistoPor'];
+  if (rawSeen is List) {
+    for (final item in rawSeen) {
+      if (item is String && item.isNotEmpty) seen.add(item);
+    }
+  }
+  final image = data['imageUrl'];
+  final text = data['texto'];
+  final tipo = data['tipo'];
+  return ChatMessage(
+    id: docId,
+    remitenteId: data['remitenteId'] is String ? data['remitenteId'] as String : '',
+    fecha: _dateFrom(data['fechaCreacion']),
+    texto: text is String ? text : '',
+    imageUrl: image is String ? image : '',
+    tipo: tipo is String && tipo.isNotEmpty ? tipo : 'text',
+    vistoPor: seen,
+  );
 }
 
 Future<void> _ensureTeamCanguros() async {

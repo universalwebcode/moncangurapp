@@ -19,6 +19,8 @@ class AppState extends ChangeNotifier {
   final List<ServiceOffer> services = [];
   final List<CangurProfile> canguros = [];
   final List<Booking> bookings = [];
+  final Map<String, ChatPreview> chatPreviews = {};
+  final Map<String, List<ChatMessage>> messagesByChat = {};
   final List<Review> reviews = [];
   final List<QuoteRequest> quotes = [];
   String? banner;
@@ -176,6 +178,97 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     } on AccountFailure {
       return;
+    }
+  }
+
+  Future<void> refreshChatPreviews() async {
+    final gateway = accounts;
+    final account = user;
+    if (gateway == null || account == null) return;
+    try {
+      final remote = await gateway.loadChatPreviews(userId: account.id, role: account.role);
+      chatPreviews
+        ..clear()
+        ..addAll(remote);
+      notifyListeners();
+    } on AccountFailure {
+      return;
+    }
+  }
+
+  List<ChatMessage> messagesFor(String reservaId) {
+    return messagesByChat[reservaId] ?? const [];
+  }
+
+  Future<String> openChat(Booking booking) async {
+    final gateway = accounts;
+    final account = user;
+    final carerId = booking.canguroId;
+    if (gateway == null || account == null || carerId == null || carerId.isEmpty) return booking.id;
+    try {
+      final chatId = await gateway.ensureChat(
+        reservaId: booking.id,
+        padreId: booking.padreId,
+        canguroId: carerId,
+        userId: account.id,
+      );
+      final current = chatPreviews[booking.id];
+      chatPreviews[booking.id] = ChatPreview(
+        reservaId: booking.id,
+        chatId: chatId,
+        ultimoMensaje: current?.ultimoMensaje ?? '',
+        ultimoMensajeFecha: current?.ultimoMensajeFecha,
+      );
+      notifyListeners();
+      return chatId;
+    } on AccountFailure {
+      return booking.id;
+    }
+  }
+
+  Stream<List<ChatMessage>>? watchMessages(String chatId) {
+    return accounts?.watchMessages(chatId);
+  }
+
+  Future<String?> sendChatMessage({
+    required String chatId,
+    required String reservaId,
+    required String texto,
+    String imageUrl = '',
+  }) async {
+    final account = user;
+    if (account == null) return 'mustSignIn';
+    final text = texto.trim();
+    final photo = imageUrl.trim();
+    if (text.isEmpty && photo.isEmpty) return null;
+    final gateway = accounts;
+    if (gateway == null) {
+      final list = messagesByChat.putIfAbsent(reservaId, () => []);
+      list.add(
+        ChatMessage(
+          id: 'm${list.length + 1}',
+          remitenteId: account.id,
+          fecha: DateTime.now(),
+          texto: text,
+          imageUrl: photo,
+          tipo: photo.isNotEmpty ? 'image' : 'text',
+          vistoPor: [account.id],
+        ),
+      );
+      chatPreviews[reservaId] = ChatPreview(
+        reservaId: reservaId,
+        chatId: chatId,
+        ultimoMensaje: text.isNotEmpty ? text : '📷',
+        ultimoMensajeFecha: DateTime.now(),
+      );
+      notifyListeners();
+      return null;
+    }
+    try {
+      await gateway.sendChatMessage(chatId: chatId, remitenteId: account.id, texto: text, imageUrl: photo);
+      return null;
+    } on AccountFailure catch (error) {
+      return error.code;
     }
   }
 
@@ -458,6 +551,22 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  Future<String?> respondToBooking(Booking booking, {required bool accept}) async {
+    final previous = booking.estado;
+    booking.estado = accept ? 'confirmada' : 'denegada';
+    notifyListeners();
+    final gateway = accounts;
+    if (gateway == null) return null;
+    try {
+      await gateway.updateReservaEstado(id: booking.id, estado: booking.estado);
+      return null;
+    } on AccountFailure catch (error) {
+      booking.estado = previous;
+      notifyListeners();
+      return error.code;
+    }
+  }
+
   void assignCangur(String bookingId, String canguroId) {
     final booking = _booking(bookingId);
     CangurProfile? profile;
@@ -474,6 +583,99 @@ class AppState extends ChangeNotifier {
       booking.estado = 'confirmada';
     }
     flash(tr('assignedOk'));
+  }
+
+  Future<bool> adoptExistingCangurStory() async {
+    await refreshCanguros();
+    final account = user;
+    if (account == null) return false;
+    final profile = profileFor(account.id);
+    if (profile == null || profile.qui.trim().isEmpty) return false;
+    account.perfilCompleto = true;
+    final gateway = accounts;
+    if (gateway != null) {
+      try {
+        await gateway.markCangurProfileComplete(account.id);
+      } on AccountFailure {
+        return true;
+      }
+    }
+    notifyListeners();
+    return true;
+  }
+
+  Future<String?> completeCangurIntro({
+    required String nombre,
+    required String rol,
+    required List<String> idiomas,
+    required String qui,
+    required String trayectoria,
+    required String agrada,
+    required String puntFort,
+    String? photoUrl,
+  }) async {
+    final account = user;
+    if (account == null) return 'mustSignIn';
+    final existing = profileFor(account.id);
+    final name = nombre.trim();
+    final story = qui.trim();
+    final photo = photoUrl ?? existing?.photoUrl;
+    final profile = CangurProfile(
+      userId: account.id,
+      nombre: name,
+      email: account.email,
+      descripcionPersonal: story,
+      tarifaPorHora: existing?.tarifaPorHora ?? 0,
+      servicios: existing?.servicios ?? [],
+      certificaciones: existing?.certificaciones ?? [],
+      idiomas: idiomas,
+      week: existing?.week ?? {},
+      activo: existing?.activo ?? false,
+      aniosExperiencia: existing?.aniosExperiencia ?? 0,
+      photoUrl: photo,
+      slug: existing?.slug ?? '',
+      rol: rol.trim(),
+      badge: existing?.badge ?? '',
+      color: existing?.color ?? 0xFF6E82A6,
+      qui: story,
+      trayectoria: trayectoria.trim(),
+      agrada: agrada.trim(),
+      puntFort: puntFort.trim(),
+      habilidades: existing?.habilidades,
+      fotos: existing?.fotos,
+      exceptions: existing?.exceptions,
+    );
+    final index = canguros.indexWhere((item) => item.userId == account.id);
+    if (index >= 0) {
+      canguros[index] = profile;
+    } else {
+      canguros.add(profile);
+    }
+    account.nombre = name;
+    final gateway = accounts;
+    if (gateway == null) {
+      notifyListeners();
+      return null;
+    }
+    try {
+      await gateway.saveCangurIntro(
+        uid: account.id,
+        displayName: name,
+        rol: profile.rol,
+        idiomas: idiomas,
+        qui: story,
+        trayectoria: profile.trayectoria,
+        agrada: profile.agrada,
+        puntFort: profile.puntFort,
+        activo: profile.activo,
+        photoUrl: photo,
+      );
+      notifyListeners();
+      return null;
+    } on AccountFailure catch (error) {
+      notifyListeners();
+      return error.code;
+    }
   }
 
   Future<String?> saveCangurProfile(CangurProfile profile) async {
@@ -500,7 +702,35 @@ class AppState extends ChangeNotifier {
         habilidades: profile.habilidades,
         certificaciones: profile.certificaciones,
         week: profile.week,
+        rol: profile.rol,
+        idiomas: profile.idiomas,
+        qui: profile.qui,
+        trayectoria: profile.trayectoria,
+        agrada: profile.agrada,
+        puntFort: profile.puntFort,
+        photoUrl: profile.photoUrl,
+        fotos: profile.fotos,
       );
+      notifyListeners();
+      return null;
+    } on AccountFailure catch (error) {
+      notifyListeners();
+      return error.code;
+    }
+  }
+
+  Future<String?> saveAvailability(List<AvailabilityException> days) async {
+    final account = user;
+    if (account == null) return 'mustSignIn';
+    final current = profileFor(account.id);
+    if (current != null) current.exceptions = days;
+    final gateway = accounts;
+    if (gateway == null) {
+      notifyListeners();
+      return null;
+    }
+    try {
+      await gateway.saveAvailability(uid: account.id, days: days);
       notifyListeners();
       return null;
     } on AccountFailure catch (error) {
@@ -513,29 +743,68 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addReview({
-    required Booking booking,
-    required int puntualidad,
-    required int trato,
-    required int profesionalismo,
-    required String comentario,
-  }) {
+  Future<void> refreshReviews() async {
+    final gateway = accounts;
     final account = user;
-    if (account == null || booking.canguroId == null) return;
+    if (gateway == null || account == null) return;
+    try {
+      final remote = await gateway.loadReviews(userId: account.id, forCarer: account.role == UserRole.cangur);
+      reviews
+        ..clear()
+        ..addAll(remote);
+      notifyListeners();
+    } on AccountFailure {
+      return;
+    }
+  }
+
+  Review? reviewOnBooking(String reservaId) {
+    for (final review in reviews) {
+      if (review.reservaId == reservaId) return review;
+    }
+    return null;
+  }
+
+  Review? reviewForBooking(String reservaId) {
+    final account = user;
+    if (account == null) return null;
+    for (final review in reviews) {
+      if (review.reservaId == reservaId && review.padreId == account.id) return review;
+    }
+    return null;
+  }
+
+  Future<String?> addReview({
+    required Booking booking,
+    required int stars,
+    required String comentario,
+    required bool compartir,
+  }) async {
+    final account = user;
+    if (account == null) return 'mustSignIn';
+    final score = stars < 1 ? 1 : (stars > 5 ? 5 : stars);
     reviews.removeWhere((r) => r.reservaId == booking.id && r.padreId == account.id);
-    reviews.add(
-      Review(
-        id: 'v${reviews.length + 1}',
-        padreId: account.id,
-        canguroId: booking.canguroId!,
-        reservaId: booking.id,
-        puntualidad: puntualidad,
-        trato: trato,
-        profesionalismo: profesionalismo,
-        comentario: comentario.trim(),
-      ),
+    final review = Review(
+      id: 'v${booking.id}',
+      padreId: account.id,
+      canguroId: booking.canguroId ?? '',
+      reservaId: booking.id,
+      puntualidad: score,
+      trato: score,
+      profesionalismo: score,
+      comentario: comentario.trim(),
+      compartir: compartir,
     );
+    reviews.add(review);
     notifyListeners();
+    final gateway = accounts;
+    if (gateway == null) return null;
+    try {
+      await gateway.saveReview(review);
+      return null;
+    } on AccountFailure catch (error) {
+      return error.code;
+    }
   }
 
   List<Review> reviewsFor(String canguroId) {

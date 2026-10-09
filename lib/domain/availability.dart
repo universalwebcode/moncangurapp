@@ -40,6 +40,10 @@ bool intervalCovered(String start, String end, List<TimeBand> bands) {
     final bandStart = minutesOf(band.inicio);
     final bandEnd = minutesOf(band.fin);
     if (bandStart == null || bandEnd == null) continue;
+    if (bandEnd <= bandStart) {
+      if (startMin >= bandStart && endMin > startMin) return true;
+      continue;
+    }
     if (bandStart <= startMin && bandEnd >= endMin) return true;
   }
   return false;
