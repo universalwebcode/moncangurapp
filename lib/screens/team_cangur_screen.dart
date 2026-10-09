@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/team_cangurs.dart';
 import '../l10n/cangur_copy.dart';
+import '../l10n/home_copy.dart';
+import '../models/models.dart';
 import '../widgets/mc_widgets.dart';
 import 'reserva_screen.dart';
 
@@ -12,46 +14,123 @@ class TeamStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final lang = state.lang;
+    final colors = _TeamColors.of(context);
     final people = showcaseTeam(state.canguros);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          ct(lang, 'team').toUpperCase(),
-          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 1.4, color: Color(0xFF8CA598)),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 100,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: people.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 14),
-            itemBuilder: (context, index) {
-              final person = people[index];
-              return InkWell(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeamCangurScreen(slug: person.slug))),
-                borderRadius: BorderRadius.circular(16),
-                child: SizedBox(
-                  width: 64,
-                  child: Column(
-                    children: [
-                      _Avatar(person: person, size: 54, radius: 16, fontSize: 21),
-                      const SizedBox(height: 6),
-                      Text(
-                        person.firstName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 11.5, color: Color(0xFF6B6560)),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 26, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(hm(lang, 'teamEyebrow').toUpperCase(), style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 2.2, color: colors.menta)),
+          const SizedBox(height: 9),
+          Text(hm(lang, 'teamTitle'), style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 28, height: 1.15, color: colors.ink)),
+          const SizedBox(height: 7),
+          Text(hm(lang, 'teamSub'), style: TextStyle(fontFamily: 'Nunito', fontSize: 14.5, height: 1.5, color: colors.text2)),
+          const SizedBox(height: 14),
+          for (final person in people) ...[
+            _TeamCard(colors: colors, person: person, lang: lang),
+            const SizedBox(height: 13),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TeamCard extends StatelessWidget {
+  const _TeamCard({required this.colors, required this.person, required this.lang});
+
+  final _TeamColors colors;
+  final TeamStory person;
+  final AppLang lang;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: colors.card,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeamCangurScreen(slug: person.slug))),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: colors.line, width: 1.5),
+            boxShadow: [BoxShadow(color: colors.shadow, blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Avatar(person: person, size: 62, radius: 17, fontSize: 24),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Text(person.nombre, style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 17, color: colors.ink)),
+                        if (person.badge.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: colors.brun, borderRadius: BorderRadius.circular(999)),
+                            child: Text(
+                              ct(lang, 'founder').toUpperCase(),
+                              style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 10.5, letterSpacing: 0.4, color: Colors.white),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (person.rol.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(person.rol, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, height: 1.4, color: colors.text2)),
+                    ],
+                    if (person.idiomas.isNotEmpty) ...[
+                      const SizedBox(height: 9),
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 5,
+                        children: [
+                          for (final language in person.idiomas)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                              decoration: BoxDecoration(color: colors.menta15, borderRadius: BorderRadius.circular(999)),
+                              child: Text(language, style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 11, color: colors.text)),
+                            ),
+                        ],
                       ),
                     ],
-                  ),
+                    if (person.puntFort.isNotEmpty) ...[
+                      const SizedBox(height: 9),
+                      Text.rich(
+                        TextSpan(
+                          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, height: 1.45, color: colors.text),
+                          children: [
+                            TextSpan(text: '${hm(lang, 'strength')}: ', style: TextStyle(fontWeight: FontWeight.w800, color: colors.brun)),
+                            TextSpan(text: person.puntFort),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 9),
+                    Row(
+                      children: [
+                        Text(hm(lang, 'see'), style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13, color: colors.menta)),
+                        Icon(Icons.chevron_right, size: 16, color: colors.menta),
+                      ],
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

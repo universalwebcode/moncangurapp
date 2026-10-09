@@ -67,6 +67,7 @@ flutter:
     - assets/images/signupImage.png
     - assets/images/FamiliaMC.png
     - assets/images/entrada_mark.jpg
+    - assets/images/serveis/
 
   fonts:
     - family: MPLUSRounded1c
